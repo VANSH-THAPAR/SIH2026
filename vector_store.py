@@ -210,6 +210,12 @@ class RiskPriority(Base):
     
     primary_pattern_id = Column(String, nullable=True)
     primary_pattern_score = Column(Float, nullable=True)
+    primary_pattern_type = Column(String, nullable=True)
+    primary_pattern_description = Column(Text, nullable=True)
+    
+    sif_potential = Column(Boolean, nullable=True)
+    safety_floor_applied = Column(Boolean, default=False)
+    calculation_version = Column(String, default="1.0")
     
     site_name = Column(String, nullable=True)
     activity = Column(String, nullable=True)
@@ -218,7 +224,7 @@ class RiskPriority(Base):
     primary_rule = Column(String, nullable=True)
     primary_barrier = Column(String, nullable=True)
     
-    priority_reason = Column(JSON, nullable=True)
+    reason_json = Column(JSON, nullable=True)
     
     calculated_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -653,6 +659,28 @@ class PostgresManager:
         except Exception as e:
             db.rollback()
             print(f"Error saving risk priorities: {e}")
+            return False
+        finally:
+            db.close()
+            
+    def save_risk_priorities_bulk(self, priorities_data: List[dict]) -> bool:
+        """
+        Fast batched upsert of risk priorities to avoid O(n^2) DB operations.
+        Deletes existing rows for these reports first to ensure idempotency.
+        """
+        db = self.SessionLocal()
+        try:
+            report_ids = [d['report_id'] for d in priorities_data]
+            # Delete existing priorities for these reports
+            db.query(RiskPriority).filter(RiskPriority.report_id.in_(report_ids)).delete(synchronize_session=False)
+            
+            # Bulk insert
+            db.bulk_insert_mappings(RiskPriority, priorities_data)
+            db.commit()
+            return True
+        except Exception as e:
+            db.rollback()
+            print(f"Error bulk saving risk priorities: {e}")
             return False
         finally:
             db.close()

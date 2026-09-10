@@ -6,6 +6,8 @@ from ai.analyzer import SafetyAnalyzer
 from ai.sif.service import SIFService
 from ai.life_saving_rules.service import LifeSavingRuleService
 from ai.barriers.service import BarrierService
+from ai.risk_prioritization.engine import RiskEngine
+from ai.risk_prioritization.aggregator import RiskAggregator
 from datetime import datetime
 
 app = FastAPI(
@@ -421,6 +423,106 @@ async def get_pattern(pattern_id: str):
         return pattern.__dict__
     finally:
         db.close()
+
+# --- STAGE 6: RISK PRIORITIZATION APIs ---
+
+@app.get("/risk-priorities")
+async def get_risk_priorities(limit: int = 50, priority_level: str = None, sif_potential: bool = None):
+    db = vector_store.SessionLocal()
+    try:
+        from vector_store import RiskPriority
+        query = db.query(RiskPriority)
+        if priority_level:
+            query = query.filter(RiskPriority.final_priority_level == priority_level)
+        if sif_potential is not None:
+            query = query.filter(RiskPriority.sif_potential == sif_potential)
+            
+        priorities = query.order_by(RiskPriority.final_priority_score.desc()).limit(limit).all()
+        # Convert to dict, parsing JSON if needed
+        results = []
+        for p in priorities:
+            d = p.__dict__.copy()
+            if '_sa_instance_state' in d: del d['_sa_instance_state']
+            results.append(d)
+        return results
+    finally:
+        db.close()
+
+@app.get("/risk-priorities/top")
+async def get_top_risk_priorities(limit: int = 10):
+    db = vector_store.SessionLocal()
+    try:
+        from vector_store import RiskPriority
+        priorities = db.query(RiskPriority).filter(RiskPriority.final_priority_level.in_(["CRITICAL", "HIGH"])).order_by(RiskPriority.final_priority_score.desc()).limit(limit).all()
+        results = []
+        for p in priorities:
+            d = p.__dict__.copy()
+            if '_sa_instance_state' in d: del d['_sa_instance_state']
+            results.append(d)
+        return results
+    finally:
+        db.close()
+
+@app.get("/risk-priorities/sites")
+async def get_risk_priorities_sites():
+    db = vector_store.SessionLocal()
+    try:
+        from vector_store import RiskPriority
+        priorities = db.query(RiskPriority).all()
+        return RiskAggregator.aggregate_by_site(priorities)
+    finally:
+        db.close()
+
+@app.get("/risk-priorities/activities")
+async def get_risk_priorities_activities():
+    db = vector_store.SessionLocal()
+    try:
+        from vector_store import RiskPriority
+        priorities = db.query(RiskPriority).all()
+        return RiskAggregator.aggregate_by_activity(priorities)
+    finally:
+        db.close()
+
+@app.get("/risk-priorities/rules")
+async def get_risk_priorities_rules():
+    db = vector_store.SessionLocal()
+    try:
+        from vector_store import RiskPriority
+        priorities = db.query(RiskPriority).all()
+        return RiskAggregator.aggregate_by_rule(priorities)
+    finally:
+        db.close()
+
+@app.get("/risk-priorities/barriers")
+async def get_risk_priorities_barriers():
+    db = vector_store.SessionLocal()
+    try:
+        from vector_store import RiskPriority
+        priorities = db.query(RiskPriority).all()
+        return RiskAggregator.aggregate_by_barrier(priorities)
+    finally:
+        db.close()
+
+@app.get("/risk-priorities/{report_id}")
+async def get_risk_priority(report_id: str):
+    db = vector_store.SessionLocal()
+    try:
+        from vector_store import RiskPriority
+        priority = db.query(RiskPriority).filter(RiskPriority.report_id == report_id).first()
+        if not priority:
+            # Maybe it hasn't been calculated yet, try to calculate it on the fly
+            engine = RiskEngine()
+            calc = engine.process_risk_priority(report_id)
+            if not calc:
+                raise HTTPException(status_code=404, detail="Risk priority not found and could not be calculated.")
+            return calc.dict()
+            
+        d = priority.__dict__.copy()
+        if '_sa_instance_state' in d: del d['_sa_instance_state']
+        return d
+    finally:
+        db.close()
+
 
 
 if __name__ == "__main__":
