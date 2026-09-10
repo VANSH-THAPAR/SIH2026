@@ -315,6 +315,114 @@ async def get_report_barriers(report_id: str):
     finally:
         db.close()
 
+
+from fastapi import BackgroundTasks
+import uuid
+
+# Memory store for job status (in a real app, use Redis/DB)
+job_status_store = {}
+
+@app.post("/patterns/rebuild")
+async def rebuild_patterns(background_tasks: BackgroundTasks, min_reports: int = 3, max_llm_calls: int = 10):
+    """
+    Triggers a background job to rebuild the pattern intelligence engine across all reports.
+    """
+    job_id = str(uuid.uuid4())
+    job_status_store[job_id] = {
+        "status": "QUEUED",
+        "progress": "Pending execution",
+        "result": None
+    }
+    
+    def run_rebuild():
+        job_status_store[job_id]["status"] = "RUNNING"
+        job_status_store[job_id]["progress"] = "Generating deterministic candidates and calculating SIF metrics..."
+        try:
+            from ai.pattern_intelligence.engine import PatternEngine
+            engine = PatternEngine()
+            result = engine.rebuild(min_reports=min_reports, max_llm_calls=max_llm_calls)
+            job_status_store[job_id]["status"] = "COMPLETED"
+            job_status_store[job_id]["result"] = result
+        except Exception as e:
+            job_status_store[job_id]["status"] = "FAILED"
+            job_status_store[job_id]["error"] = str(e)
+
+    background_tasks.add_task(run_rebuild)
+    
+    return {
+        "job_id": job_id,
+        "status": "started"
+    }
+
+@app.get("/patterns/jobs/{job_id}")
+async def get_pattern_job_status(job_id: str):
+    if job_id not in job_status_store:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return job_status_store[job_id]
+
+@app.get("/patterns")
+async def get_patterns(limit: int = 50):
+    db = vector_store.SessionLocal()
+    try:
+        from vector_store import Pattern
+        patterns = db.query(Pattern).order_by(Pattern.pattern_score.desc()).limit(limit).all()
+        return [p.__dict__ for p in patterns]
+    finally:
+        db.close()
+
+@app.get("/patterns/top")
+async def get_top_patterns(limit: int = 10):
+    db = vector_store.SessionLocal()
+    try:
+        from vector_store import Pattern
+        patterns = db.query(Pattern).filter(Pattern.priority_level.in_(["CRITICAL", "HIGH"])).order_by(Pattern.pattern_score.desc()).limit(limit).all()
+        return [p.__dict__ for p in patterns]
+    finally:
+        db.close()
+
+@app.get("/patterns/sites")
+async def get_site_patterns():
+    db = vector_store.SessionLocal()
+    try:
+        from vector_store import Pattern
+        patterns = db.query(Pattern).filter(Pattern.pattern_type.in_(["SITE_ACTIVITY", "SITE_RULE", "SITE_BARRIER"])).order_by(Pattern.pattern_score.desc()).all()
+        return [p.__dict__ for p in patterns]
+    finally:
+        db.close()
+
+@app.get("/patterns/barriers")
+async def get_barrier_patterns():
+    db = vector_store.SessionLocal()
+    try:
+        from vector_store import Pattern
+        patterns = db.query(Pattern).filter(Pattern.pattern_type.in_(["ACTIVITY_BARRIER", "SITE_BARRIER", "RULE_BARRIER", "CROSS_SITE_BARRIER"])).order_by(Pattern.pattern_score.desc()).all()
+        return [p.__dict__ for p in patterns]
+    finally:
+        db.close()
+
+@app.get("/patterns/trends")
+async def get_trending_patterns():
+    db = vector_store.SessionLocal()
+    try:
+        from vector_store import Pattern
+        patterns = db.query(Pattern).filter(Pattern.trend.in_(["INCREASING", "NEW"])).order_by(Pattern.trend_change_percent.desc()).all()
+        return [p.__dict__ for p in patterns]
+    finally:
+        db.close()
+
+@app.get("/patterns/{pattern_id}")
+async def get_pattern(pattern_id: str):
+    db = vector_store.SessionLocal()
+    try:
+        from vector_store import Pattern
+        pattern = db.query(Pattern).filter(Pattern.pattern_id == pattern_id).first()
+        if not pattern:
+            raise HTTPException(status_code=404, detail="Pattern not found")
+        return pattern.__dict__
+    finally:
+        db.close()
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

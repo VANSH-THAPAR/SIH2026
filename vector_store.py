@@ -4,7 +4,7 @@ from typing import List, Dict, Any
 from models import ReportPayload
 from dotenv import load_dotenv
 
-from sqlalchemy import create_engine, Column, String, Float, Text, text, ForeignKey, DateTime, Boolean
+from sqlalchemy import create_engine, Column, String, Float, Text, text, ForeignKey, DateTime, Boolean, Integer
 from sqlalchemy.types import JSON
 from sqlalchemy.orm import sessionmaker, declarative_base
 from pgvector.sqlalchemy import Vector
@@ -134,6 +134,93 @@ class ReportBarrier(Base):
     reasoning = Column(Text, nullable=True)
     mapping_method = Column(String, nullable=False, default='LLM+VALIDATION')
     created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class Pattern(Base):
+    __tablename__ = 'patterns'
+    
+    pattern_id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    pattern_type = Column(String, nullable=False)
+    pattern_key = Column(String, unique=True, nullable=False)
+    title = Column(String, nullable=True)
+    description = Column(Text, nullable=True)
+    
+    region = Column(String, nullable=True)
+    site_id = Column(String, nullable=True)
+    site_name = Column(String, nullable=True)
+    work_area = Column(String, nullable=True)
+    activity = Column(String, nullable=True)
+    sub_activity = Column(String, nullable=True)
+    
+    rule_code = Column(String, nullable=True)
+    rule_name = Column(String, nullable=True)
+    barrier_code = Column(String, nullable=True)
+    barrier_name = Column(String, nullable=True)
+    
+    total_report_count = Column(Integer, default=0)
+    sif_report_count = Column(Integer, default=0)
+    sif_density = Column(Float, default=0.0)
+    
+    current_period_count = Column(Integer, default=0)
+    previous_period_count = Column(Integer, default=0)
+    trend = Column(String, nullable=True)
+    trend_change_percent = Column(Float, default=0.0)
+    
+    recurrence_score = Column(Float, default=0.0)
+    trend_score = Column(Float, default=0.0)
+    barrier_criticality_score = Column(Float, default=0.0)
+    site_concentration_score = Column(Float, default=0.0)
+    
+    pattern_score = Column(Float, default=0.0)
+    priority_level = Column(String, nullable=True)
+    
+    first_detected = Column(DateTime, nullable=True)
+    last_detected = Column(DateTime, nullable=True)
+    
+    site_count = Column(Integer, default=0)
+    activity_count = Column(Integer, default=0)
+    rule_count = Column(Integer, default=0)
+    barrier_count = Column(Integer, default=0)
+    
+    similar_report_count = Column(Integer, default=0)
+    
+    evidence_report_ids = Column(JSON, nullable=True)
+    
+    llm_summary = Column(Text, nullable=True)
+    llm_recommendation = Column(Text, nullable=True)
+    
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class RiskPriority(Base):
+    __tablename__ = 'risk_priorities'
+    
+    risk_id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    report_id = Column(String, ForeignKey('sif_reports.report_id'), unique=True, nullable=False)
+    
+    individual_risk_score = Column(Float, default=0.0)
+    pattern_risk_score = Column(Float, default=0.0)
+    barrier_criticality_score = Column(Float, default=0.0)
+    trend_score = Column(Float, default=0.0)
+    
+    final_priority_score = Column(Float, default=0.0)
+    final_priority_level = Column(String, nullable=False)
+    
+    primary_pattern_id = Column(String, nullable=True)
+    primary_pattern_score = Column(Float, nullable=True)
+    
+    site_name = Column(String, nullable=True)
+    activity = Column(String, nullable=True)
+    work_area = Column(String, nullable=True)
+    
+    primary_rule = Column(String, nullable=True)
+    primary_barrier = Column(String, nullable=True)
+    
+    priority_reason = Column(JSON, nullable=True)
+    
+    calculated_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 class PostgresManager:
@@ -489,6 +576,83 @@ class PostgresManager:
         except Exception as e:
             db.rollback()
             print(f"Error saving report barriers for report {report_id}: {e}")
+            return False
+        finally:
+            db.close()
+
+    def save_pattern(self, pattern_data: dict) -> bool:
+        db = self.SessionLocal()
+        try:
+            pattern_key = pattern_data['pattern_key']
+            record = db.query(Pattern).filter(Pattern.pattern_key == pattern_key).first()
+            if not record:
+                record = Pattern(pattern_key=pattern_key)
+                db.add(record)
+            
+            for key, value in pattern_data.items():
+                if hasattr(record, key):
+                    setattr(record, key, value)
+                    
+            db.commit()
+            return True
+        except Exception as e:
+            db.rollback()
+            print(f"Error saving pattern {pattern_data.get('pattern_key')}: {e}")
+            return False
+        finally:
+            db.close()
+
+    def get_top_patterns(self, limit: int = 10):
+        db = self.SessionLocal()
+        try:
+            patterns = db.query(Pattern).order_by(Pattern.pattern_score.desc()).limit(limit).all()
+            return patterns
+        except Exception as e:
+            print(f"Error fetching top patterns: {e}")
+            return []
+        finally:
+            db.close()
+            
+    def get_pattern(self, pattern_id: str):
+        db = self.SessionLocal()
+        try:
+            pattern = db.query(Pattern).filter(Pattern.pattern_id == pattern_id).first()
+            return pattern
+        except Exception as e:
+            print(f"Error fetching pattern {pattern_id}: {e}")
+            return None
+        finally:
+            db.close()
+            
+    def get_reports_by_ids(self, report_ids):
+        db = self.SessionLocal()
+        try:
+            reports = db.query(ReportRecord).filter(ReportRecord.report_id.in_(report_ids)).all()
+            return reports
+        except Exception as e:
+            print(f"Error fetching reports by ids: {e}")
+            return []
+        finally:
+            db.close()
+
+    def save_risk_priorities(self, priorities_data: List[dict]) -> bool:
+        db = self.SessionLocal()
+        try:
+            for data in priorities_data:
+                report_id = data['report_id']
+                record = db.query(RiskPriority).filter(RiskPriority.report_id == report_id).first()
+                if not record:
+                    record = RiskPriority(report_id=report_id)
+                    db.add(record)
+                
+                for key, value in data.items():
+                    if hasattr(record, key):
+                        setattr(record, key, value)
+            db.commit()
+            return True
+        except Exception as e:
+            db.rollback()
+            print(f"Error saving risk priorities: {e}")
             return False
         finally:
             db.close()
