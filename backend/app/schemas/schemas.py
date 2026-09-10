@@ -7,17 +7,35 @@ from pydantic import BaseModel
 # CORE INCIDENT SCHEMAS
 # =====================================================
 
+class SiteInfo(BaseModel):
+    site_id: Optional[str] = None
+    site_name: Optional[str] = None
+    region: Optional[str] = None
+
+
+class ReporterInfo(BaseModel):
+    emp_id: Optional[str] = None
+    name: Optional[str] = None
+
+
 class IncidentSummary(BaseModel):
     """Compact incident for lists and board cards."""
     id: str  # report_id
+    report_id: Optional[str] = None
     title: str  # derived from description or report_type
     report_type: str
+    site_id: Optional[str] = None
     site_name: Optional[str] = None
     region: Optional[str] = None
+    site: Optional[SiteInfo] = None
     location: Optional[str] = None
     department: Optional[str] = None
     activity: Optional[str] = None
     report_date: Optional[str] = None
+    time: Optional[str] = None
+    primary_reporter_id: Optional[str] = None
+    reported_by: Optional[List[ReporterInfo]] = None
+    source: Optional[str] = None
     # Analysis data
     sif_score: Optional[float] = None
     sif_classification: Optional[str] = None
@@ -114,14 +132,20 @@ class SimilarIncident(BaseModel):
 class IncidentDetail(BaseModel):
     """Full incident intelligence workspace data."""
     id: str
+    report_id: Optional[str] = None
     title: str
     report_type: str
+    site_id: Optional[str] = None
     site_name: Optional[str] = None
     region: Optional[str] = None
+    site: Optional[SiteInfo] = None
     location: Optional[str] = None
     department: Optional[str] = None
     activity: Optional[str] = None
     report_date: Optional[str] = None
+    time: Optional[str] = None
+    primary_reporter_id: Optional[str] = None
+    reported_by: Optional[List[ReporterInfo]] = None
     description: Optional[str] = None
     source: Optional[str] = None
     # Application meta
@@ -186,15 +210,21 @@ class IncidentUpdate(BaseModel):
 
 
 class IncidentCreate(BaseModel):
-    report_type: str
-    title: str
-    description: str
+    report_id: Optional[str] = None
+    report_date: Optional[str] = None
+    time: Optional[str] = None
+    site: Optional[SiteInfo] = None
+    site_id: Optional[str] = None
     site_name: Optional[str] = None
     region: Optional[str] = None
     location: Optional[str] = None
     department: Optional[str] = None
-    report_date: Optional[str] = None
+    reported_by: Optional[List[ReporterInfo]] = None
+    primary_reporter_id: Optional[str] = None
+    report_type: str
     activity: Optional[str] = None
+    description: str
+    source: Optional[str] = "OIL_HSE_PLATFORM"
 
 
 # =====================================================

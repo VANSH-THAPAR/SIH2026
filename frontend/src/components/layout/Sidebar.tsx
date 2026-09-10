@@ -5,28 +5,28 @@ import {
  AlertTriangle,
  ShieldCheck,
  Brain,
- CheckSquare,
  BarChart3,
  Settings,
  Flame,
- BookOpen,
  Activity,
+ PlusCircle,
 } from 'lucide-react';
+import { useState } from 'react';
+import { NewReportForm } from '../forms/NewReportForm';
 
 const NAV_ITEMS = [
  { path: '/', label: 'Command Center', icon: LayoutDashboard, exact: true },
  { path: '/incidents', label: 'Incident Board', icon: AlertTriangle },
  { path: '/sif', label: 'SIF Intelligence', icon: Flame },
  { path: '/controls', label: 'Safety Controls', icon: ShieldCheck },
- { path: '/memory', label: 'Safety Memory', icon: BookOpen },
  { path: '/patterns', label: 'Pattern Intel', icon: Brain },
- { path: '/actions', label: 'Actions Board', icon: CheckSquare },
  { path: '/reports', label: 'Reports', icon: BarChart3 },
  { path: '/admin', label: 'Administration', icon: Settings },
 ];
 
 export function Sidebar() {
  const location = useLocation();
+ const [isNewReportOpen, setIsNewReportOpen] = useState(false);
 
  return (
  <div
@@ -51,6 +51,15 @@ export function Sidebar() {
 
  {/* Navigation */}
  <nav className="flex-1 overflow-y-auto py-2">
+ <div className="px-3 mb-4 mt-2">
+ <button
+ onClick={() => setIsNewReportOpen(true)}
+ className="flex items-center justify-center gap-2 w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold transition-colors"
+ >
+ <PlusCircle className="w-4 h-4" />
+ New Report
+ </button>
+ </div>
  <div className="px-2">
  <p className="text-[10px] font-semibold uppercase tracking-widest text-mute/60 px-2 py-2 mt-1">
  Main Menu
@@ -95,6 +104,10 @@ export function Sidebar() {
  </div>
  </div>
  </div>
+
+ {isNewReportOpen && (
+ <NewReportForm onClose={() => setIsNewReportOpen(false)} />
+ )}
  </div>
  );
 }

@@ -10,6 +10,35 @@ export type TrendDirection = 'UP' | 'DOWN' | 'STABLE';
 
 // ─── Incident Types ──────────────────────────────────────────────────────────
 
+export interface SiteInfo {
+  site_id?: string;
+  site_name?: string;
+  region?: string;
+}
+
+export interface ReporterInfo {
+  emp_id?: string;
+  name?: string;
+}
+
+export interface IncidentCreate {
+  report_id?: string;
+  report_date?: string;
+  time?: string;
+  site?: SiteInfo;
+  site_id?: string;
+  site_name?: string;
+  region?: string;
+  location?: string;
+  department?: string;
+  reported_by?: ReporterInfo[];
+  primary_reporter_id?: string;
+  report_type: string;
+  activity?: string;
+  description: string;
+  source?: string;
+}
+
 export interface IncidentSummary {
  id: string;
  title: string;

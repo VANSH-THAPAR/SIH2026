@@ -5,7 +5,7 @@ from typing import Optional
 from app.db.database import get_db
 from app.schemas.schemas import (
     IncidentListResponse, IncidentDetail, IncidentUpdate,
-    IncidentCreate, ActionCreate, CommentCreate, CommentResponse,
+    IncidentCreate, IncidentSummary, ActionCreate, CommentCreate, CommentResponse,
     ActionSummary, ActivityEntry
 )
 from app.services import incident_service
@@ -45,6 +45,16 @@ def list_incidents(
         sif_max=sif_max,
     )
     return IncidentListResponse(**result)
+
+
+@router.post("", response_model=IncidentSummary, status_code=201)
+@router.post("/ingest", response_model=IncidentSummary, status_code=201)
+def create_incident(
+    incident: IncidentCreate,
+    db: Session = Depends(get_db),
+):
+    """Create or ingest a new incident report."""
+    return incident_service.create_incident(db, incident)
 
 
 @router.get("/{report_id}", response_model=IncidentDetail)

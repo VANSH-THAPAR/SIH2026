@@ -1,6 +1,7 @@
 import axios from 'axios';
 import type {
  IncidentSummary,
+ IncidentCreate,
  IncidentDetail,
  DashboardKPIs,
  DashboardTrends,
@@ -54,6 +55,11 @@ export const fetchIncidents = async (
 
 export const fetchIncident = async (id: string): Promise<IncidentDetail> => {
  const res = await api.get<IncidentDetail>(`/incidents/${id}`);
+ return res.data.patterns || res.data;
+};
+
+export const createIncident = async (body: IncidentCreate): Promise<IncidentSummary> => {
+ const res = await api.post<IncidentSummary>('/incidents', body);
  return res.data.patterns || res.data;
 };
 

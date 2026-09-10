@@ -25,8 +25,8 @@ LSR_KEYWORDS = {
         "atmospheric", "oxygen", "gas testing", "entry permit"
     ],
     "ENERGY_ISOLATION": [
-        "loto", "lockout", "tagout", "isolation", "energy", "depressurization",
-        "bled", "pressure", "energized", "de-energized", "zero energy"
+        "loto", "lockout", "tagout", "isolation", "energy", "depressuriz", "depressurization",
+        "valve", "pipeline", "bled", "pressure", "energized", "de-energized", "zero energy"
     ],
     "LINE_OF_FIRE": [
         "line of fire", "struck by", "caught between", "moving equipment",
@@ -56,8 +56,8 @@ LSR_KEYWORDS = {
 
 # Barrier keyword mappings
 BARRIER_KEYWORDS = {
-    "ENERGY_ISOLATION": ["isolation", "energy isolation", "zero energy"],
-    "DEPRESSURIZATION": ["depressurization", "pressure", "bled", "pressure relief"],
+    "ENERGY_ISOLATION": ["isolation", "energy isolation", "zero energy", "valve", "pipeline"],
+    "DEPRESSURIZATION": ["depressuriz", "depressurization", "pressure", "bled", "pressure relief", "valve", "pipeline"],
     "LOTO": ["loto", "lockout", "tagout", "lock out"],
     "PTW": ["permit to work", "ptw", "work permit", "hot work permit"],
     "GAS_TESTING": ["gas testing", "atmospheric testing", "atmospheric monitoring", "gas check"],
