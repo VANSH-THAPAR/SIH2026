@@ -1,0 +1,2145 @@
+You are the lead full-stack engineer responsible for building the complete application described below.
+
+IMPORTANT:
+This project ALREADY HAS a Neon PostgreSQL database containing the required incident/safety data.
+
+The existing table:
+
+report_analysis
+
+is the PRIMARY SOURCE OF TRUTH for the incident/report data.
+
+DO NOT delete, truncate, overwrite, reset, migrate destructively, or otherwise modify existing data in report_analysis.
+
+The existing database must be treated as READ-SAFE and preserved.
+
+You must inspect the existing schema and data first, understand what is already available, and build the application around it.
+
+==================================================
+1. PROJECT
+==================================================
+
+Build:
+
+AI-Powered SIF Precursor Detection & Risk Intelligence Software
+
+The application converts OIL HSE/HSSE safety reports into structured safety intelligence and helps HSE users:
+
+- understand what happened
+- assess SIF potential
+- identify failed critical barriers
+- map Life-Saving Rules
+- find similar historical incidents
+- detect recurring/emerging patterns
+- understand escalation pathways
+- prioritize risk
+- create interventions
+- track actions
+- evaluate intervention outcomes
+
+Core flow:
+
+HSE REPORT
+    ↓
+UNDERSTAND
+"What happened?"
+    ↓
+ASSESS
+"Could it realistically become fatal?"
+    ↓
+IDENTIFY
+"Which critical barrier failed?"
+    ↓
+MAP
+"Which Life-Saving Rule applies?"
+    ↓
+REMEMBER
+"Has OIL seen this before?"
+    ↓
+DETECT
+"Is a dangerous pattern emerging?"
+    ↓
+RECONSTRUCT
+"How could it escalate?"
+    ↓
+PRIORITIZE
+"What should HSE act on first?"
+    ↓
+INTERVENE
+"What action should be taken?"
+    ↓
+MEASURE
+"Did the intervention work?"
+
+Central differentiator:
+
+"We don't just detect SIF precursors; we explain the pathway from precursor → failed barrier → potential escalation → historical pattern → preventive intervention."
+
+==================================================
+2. EXISTING DATABASE - CRITICAL
+==================================================
+
+There is already a Neon PostgreSQL database.
+
+The table:
+
+report_analysis
+
+already contains the data required for the project.
+
+DO NOT:
+
+- delete rows
+- truncate tables
+- drop tables
+- reset the database
+- recreate report_analysis
+- overwrite existing records
+- alter existing records just to fit your application
+- run destructive migrations
+- rename existing columns
+- change existing column types
+- replace existing data with mock data
+- create a new parallel incident table containing duplicate copies of report_analysis unless absolutely required and explicitly justified
+
+Treat report_analysis as immutable source data.
+
+The application should READ from report_analysis.
+
+If additional functionality is required, prefer creating ADDITIVE tables that reference the existing records.
+
+For example, if necessary:
+
+- actions
+- comments
+- activity_log
+- intervention_outcomes
+- analysis_metadata
+- pattern_metadata
+
+can be created separately.
+
+But never destroy or replace report_analysis.
+
+==================================================
+3. DATABASE CONNECTION
+==================================================
+
+Use:
+
+DATABASE_URL
+
+as the backend environment variable.
+
+The database credential must ONLY exist in the backend environment.
+
+NEVER:
+
+- hardcode the Neon connection string
+- put it in React
+- expose it through Vite client variables
+- put it in Git
+- put it in README
+- put it in frontend source
+- return it through an API
+- store it in browser localStorage
+
+Create:
+
+backend/.env
+
+and:
+
+backend/.env.example
+
+Example:
+
+DATABASE_URL=your_neon_connection_string_here
+
+The actual secret must be supplied locally by the developer.
+
+==================================================
+4. FIRST THING YOU MUST DO
+==================================================
+
+Before building application models:
+
+1. Inspect the existing repository.
+2. Inspect the existing NeonDB connection configuration if present.
+3. Connect to NeonDB.
+4. Inspect the schema of report_analysis.
+5. Inspect representative records.
+6. Determine the actual columns and data types.
+7. Determine which columns contain:
+   - incident IDs
+   - report titles
+   - descriptions
+   - dates
+   - locations
+   - facilities
+   - departments
+   - activities
+   - hazards
+   - equipment
+   - energy
+   - exposure
+   - unsafe acts
+   - unsafe conditions
+   - actual consequences
+   - potential consequences
+   - severity
+   - SIF information
+   - barrier information
+   - Life-Saving Rule information
+   - analysis information
+   - embeddings/vector information, if already present
+
+Do not guess.
+
+Do not assume the schema matches the conceptual model.
+
+Adapt the application to the actual database.
+
+==================================================
+5. DATABASE SAFETY CHECK
+==================================================
+
+Before any database operation:
+
+- use SELECT queries for inspection
+- do not use DELETE
+- do not use TRUNCATE
+- do not use DROP
+- do not overwrite existing records
+- do not perform destructive ALTER operations
+- do not reset the database
+- do not run seed scripts against report_analysis
+
+The first database milestone should be:
+
+"Successfully reading existing report_analysis records through FastAPI."
+
+==================================================
+6. DATABASE ARCHITECTURE
+==================================================
+
+Use:
+
+React
+  ↓
+FastAPI
+  ↓
+Neon PostgreSQL
+  ↓
+report_analysis
+
+The frontend MUST NOT connect directly to NeonDB.
+
+Architecture:
+
+React Frontend
+      ↓
+REST API
+      ↓
+FastAPI
+      ↓
+SQLAlchemy
+      ↓
+Neon PostgreSQL
+      ↓
+report_analysis
+
+If additional tables are required:
+
+FastAPI
+   ↓
+Existing report_analysis
++
+Additive application tables
+
+Existing report_analysis remains untouched.
+
+==================================================
+7. DESIGN SYSTEM
+==================================================
+
+Use the project's design system.
+
+Run:
+
+npx getdesign@latest add nike
+
+Use the generated Nike design system/components as the foundation of the frontend.
+
+Do not create a separate unrelated design system.
+
+The visual style should be:
+
+Government enterprise application
++
+Modern incident management software
+
+Use:
+
+- white/off-white background
+- navy/dark blue primary color
+- thin borders
+- moderate corner radius
+- compact cards
+- professional typography
+- blue/grey navigation
+- red/orange/yellow/green for risk/status semantics
+- dense but organized information
+- subtle hover states
+- minimal animations
+- strong information hierarchy
+
+Avoid:
+
+- excessive gradients
+- neon colors
+- excessive rounded cards
+- glassmorphism
+- huge decorative charts
+- excessive animations
+- unnecessary illustrations
+- generic AI SaaS styling
+
+Design principle:
+
+"Maximum information, minimum visual noise."
+
+==================================================
+8. TECH STACK
+==================================================
+
+FRONTEND:
+
+- React
+- TypeScript
+- Vite
+- React Router
+- TanStack Query
+- Zustand where appropriate
+- dnd-kit
+- Recharts
+- React Flow
+- Lucide React
+- Nike design system
+
+BACKEND:
+
+- Python
+- FastAPI
+- Pydantic
+- SQLAlchemy
+- PostgreSQL driver
+- Neon PostgreSQL
+
+AI ARCHITECTURE:
+
+Initial prototype:
+- existing database analysis where available
+- deterministic analysis/mock provider where AI is not yet configured
+
+Architecture should allow:
+
+- LLM API
+- DistilBERT
+- Sentence Transformers
+- all-MiniLM-L6-v2
+- pgvector
+
+Do not make the entire application dependent on an AI API just to render.
+
+==================================================
+9. REPOSITORY STRUCTURE
+==================================================
+
+Create:
+
+sif-precursor-intelligence/
+
+├── frontend/
+├── backend/
+├── docs/
+├── .gitignore
+└── README.md
+
+Frontend:
+
+frontend/src/
+
+├── app/
+├── components/
+│   ├── ui/
+│   ├── layout/
+│   ├── incidents/
+│   ├── dashboard/
+│   ├── sif/
+│   ├── barriers/
+│   ├── lsr/
+│   ├── memory/
+│   ├── patterns/
+│   ├── actions/
+│   ├── charts/
+│   └── graphs/
+├── pages/
+├── hooks/
+├── services/
+├── store/
+├── types/
+└── utils/
+
+Backend:
+
+backend/
+
+├── app/
+│   ├── main.py
+│   ├── api/
+│   ├── models/
+│   ├── schemas/
+│   ├── services/
+│   ├── db/
+│   └── core/
+├── .env
+├── .env.example
+├── requirements.txt
+└── README.md
+
+==================================================
+10. API DATA MODEL
+==================================================
+
+The API must provide a CLEAN representation of incidents.
+
+Do not expose raw database implementation details unnecessarily.
+
+For example:
+
+{
+  "id": "INC-2026-001",
+  "title": "...",
+  "description": "...",
+  "priority": "CRITICAL",
+  "status": "INVESTIGATING",
+  "facility": "...",
+  "department": "...",
+  "location": "...",
+  "activity": "...",
+  "sif_score": 92,
+  "sif_classification": "CRITICAL",
+  "confidence": 94,
+  "hazards": [],
+  "barriers": [],
+  "life_saving_rules": [],
+  "similar_incidents": [],
+  "recommended_actions": []
+}
+
+BUT:
+
+Map these fields from the actual report_analysis schema.
+
+Do not invent database columns.
+
+If a field does not exist in report_analysis, return null/empty appropriately or derive it through an analysis service.
+
+==================================================
+11. APPLICATION ROUTES
+==================================================
+
+Implement:
+
+/
+    Command Center
+
+/incidents
+    Incident Management
+
+/incidents/:id
+    Incident Intelligence Workspace
+
+/sif
+    SIF Intelligence
+
+/controls
+    Safety Barrier + Life-Saving Rule Intelligence
+
+/memory
+    Historical Safety Memory
+
+/patterns
+    Pattern Intelligence
+
+/actions
+    Actions & Interventions
+
+/reports
+    Reports
+
+/admin
+    Administration
+
+==================================================
+12. APPLICATION SHELL
+==================================================
+
+Create:
+
+Header:
+- OIL application identity
+- global search
+- notifications
+- profile
+
+Sidebar:
+
+Command Center
+Incidents
+SIF Intelligence
+Controls Intelligence
+Safety Memory
+Pattern Intelligence
+Actions
+Reports
+Administration
+
+Sidebar must show active route.
+
+Responsive behavior is required.
+
+==================================================
+13. COMMAND CENTER
+==================================================
+
+Route:
+
+/
+
+Purpose:
+
+Answer:
+
+"What requires HSE attention right now?"
+
+KPI cards:
+
+- Total Reports
+- New Reports
+- Open Incidents
+- Critical Incidents
+- High Priority
+- SIF Potential Events
+- Failed Critical Barriers
+- Emerging Patterns
+- Open Actions
+- Overdue Actions
+
+Make cards clickable.
+
+Example:
+
+Critical Incidents
+↓
+/incidents?priority=critical
+
+Charts:
+
+- SIF trend
+- priority distribution
+- risk distribution
+- failed barriers
+- Life-Saving Rules
+- facility risk
+- department risk
+- activity hotspots
+- emerging patterns
+
+Charts must be interactive.
+
+==================================================
+14. JIRA-STYLE INCIDENT BOARD
+==================================================
+
+Route:
+
+/incidents
+
+This is the PRIMARY FRONTEND EXPERIENCE.
+
+Build a highly interactive Jira-style board.
+
+Header:
+
+Incident Management
+
+[+ New Incident]
+
+Search
+Filters
+
+Board | List
+
+Default columns:
+
+CRITICAL
+HIGH
+MEDIUM
+LOW
+
+Each column should be independently scrollable.
+
+Each incident card is draggable.
+
+Example:
+
+┌──────────────────────────────┐
+│ INC-2026-001                 │
+│ Confined-space entry         │
+│                              │
+│ CRITICAL                     │
+│ SIF 92/100                   │
+│                              │
+│ Barrier: FAILED              │
+│ LSR: Confined Space          │
+│                              │
+│ Duliajan                     │
+│ Maintenance                  │
+└──────────────────────────────┘
+
+Cards should be compact and information-dense.
+
+==================================================
+15. DRAG AND DROP
+==================================================
+
+Use dnd-kit.
+
+Dragging an incident between priority columns must:
+
+1. Immediately update the UI.
+2. Send an API update.
+3. Persist the new priority.
+4. Roll back if the API fails.
+5. Show a toast/error state.
+
+Do NOT reload the entire page.
+
+Use optimistic updates.
+
+Example:
+
+CRITICAL
+   ↓ drag
+HIGH
+
+Frontend:
+
+PUT /api/incidents/{id}
+
+{
+  "priority": "HIGH"
+}
+
+==================================================
+16. INCIDENT LIST
+==================================================
+
+Provide Board | List toggle.
+
+List view columns:
+
+- Incident
+- Title
+- Type
+- Priority
+- SIF
+- Status
+- Facility
+- Department
+- Barrier
+- LSR
+- Assigned To
+- Date
+
+Support:
+
+- sorting
+- filtering
+- pagination
+- row click
+- quick actions
+
+==================================================
+17. INCIDENT FILTERING
+==================================================
+
+Filters:
+
+- Priority
+- Status
+- Facility
+- Department
+- Location
+- Incident Type
+- Barrier
+- Life-Saving Rule
+- SIF Score
+- Date
+- Assigned Person
+
+Use URL query parameters where practical.
+
+Example:
+
+/incidents?priority=critical&facility=duliajan
+
+==================================================
+18. INCIDENT DETAIL
+==================================================
+
+Route:
+
+/incidents/:id
+
+This is the centerpiece of the application.
+
+Header:
+
+INC-2026-001
+
+Incident title
+
+CRITICAL
+SIF 92/100
+Confidence 94%
+
+Facility
+Department
+Location
+
+Actions:
+
+[Assign]
+[Change Status]
+[Change Priority]
+[Create Action]
+
+Tabs:
+
+Overview
+AI Analysis
+SIF Assessment
+Escalation
+Barriers
+Life-Saving Rules
+Similar Incidents
+Patterns
+Risk
+Actions
+Activity
+
+==================================================
+19. OVERVIEW TAB
+==================================================
+
+Display information from report_analysis.
+
+Show:
+
+- Incident ID
+- Report Type
+- Report Date
+- Incident Date
+- Location
+- Facility
+- Department
+- Activity
+- Equipment
+- Reporter
+- Status
+- Assigned Person
+- Priority
+
+Original report:
+
+- Title
+- Description
+- Immediate Action
+- Actual Outcome
+
+Classification:
+
+- Report Type
+- Actual Severity
+- Potential Severity
+- SIF Potential
+
+Do not invent values when unavailable.
+
+==================================================
+20. AI ANALYSIS TAB
+==================================================
+
+Show:
+
+AI-generated summary
+
+Then:
+
+Activity
+Equipment
+Hazard
+Energy Source
+Exposure
+Unsafe Act
+Unsafe Condition
+Actual Consequence
+Potential Consequence
+
+Use:
+
+AI Detected
+AI Confidence
+Evidence
+
+Allow user review/edit of AI-derived fields where appropriate.
+
+==================================================
+21. SIF ASSESSMENT
+==================================================
+
+Display:
+
+SIF POTENTIAL
+
+92 / 100
+
+CRITICAL
+
+Then factor breakdown:
+
+Potential Consequence
+35/35
+
+Critical Hazard/Energy
+20/20
+
+Personnel Exposure
+15/15
+
+Critical Barrier Failure
+17/20
+
+Credible Escalation
+5/10
+
+Total:
+92/100
+
+Show evidence:
+
+✓ Worker directly exposed
+✓ Hazard identified
+✓ Critical barrier failed
+✓ Fatal consequence credible
+✓ Credible escalation
+
+Clearly label prototype/configurable scoring.
+
+IMPORTANT:
+
+SIF score is NOT probability of death.
+
+==================================================
+22. ESCALATION GRAPH
+==================================================
+
+Use React Flow.
+
+Example:
+
+Confined Space Entry
+        ↓
+Atmospheric Testing Not Performed
+        ↓
+Critical Barrier Failure
+        ↓
+Oxygen Deficiency
+        ↓
+Worker Exposure
+        ↓
+Loss of Consciousness
+        ↓
+Delayed Rescue
+        ↓
+Potential Fatality
+
+Nodes must be interactive.
+
+Clicking a node opens relevant details.
+
+==================================================
+23. WHAT-IF ANALYSIS
+==================================================
+
+Show:
+
+"What could have made this event fatal?"
+
+Examples:
+
+- longer exposure
+- greater oxygen depletion
+- delayed detection
+- delayed rescue
+- additional worker exposure
+
+These should initially be sourced from existing analysis data or deterministic/mock analysis.
+
+==================================================
+24. SAFETY BARRIERS
+==================================================
+
+Show every identified barrier.
+
+Example:
+
+Atmospheric Gas Testing
+
+Expected State:
+Gas testing performed before entry
+
+Observed State:
+Gas testing not performed
+
+Status:
+FAILED
+
+Failure Mode:
+Not Implemented
+
+Criticality:
+HIGH
+
+Evidence:
+"entered without checking the atmosphere"
+
+AI Confidence:
+95%
+
+Statuses:
+
+EFFECTIVE
+PARTIALLY_EFFECTIVE
+FAILED
+MISSING
+BYPASSED
+DEGRADED
+UNKNOWN
+NOT_APPLICABLE
+
+Create a Barrier Health overview.
+
+==================================================
+25. LIFE-SAVING RULES
+==================================================
+
+Show:
+
+Applicable Life-Saving Rule
+
+Example:
+
+CONFINED SPACE
+
+Confidence:
+94%
+
+Evidence:
+
+✓ Vessel entry
+✓ Atmospheric hazard
+✓ Oxygen deficiency
+✓ Worker exposure
+
+Also show candidate rules.
+
+Use a controlled Life-Saving Rule catalogue.
+
+Do not allow arbitrary AI-generated rule names to silently become official rules.
+
+==================================================
+26. SAFETY MEMORY
+==================================================
+
+Route:
+
+/memory
+
+Show historical incidents similar to the current incident.
+
+Each result:
+
+Similarity score
+Incident ID
+Title
+Facility
+Date
+Common hazards
+Common barriers
+Common activity
+
+Results should be clickable.
+
+==================================================
+27. SEMANTIC SEARCH
+==================================================
+
+Implement:
+
+POST /api/search/semantic
+
+Architecture:
+
+Incident text
+↓
+embedding
+↓
+pgvector
+↓
+top-K similar incidents
+
+Preferred architecture:
+
+all-MiniLM-L6-v2
+
+If pgvector/vector data already exists, use it.
+
+If it does not exist, create an additive implementation without modifying/deleting report_analysis.
+
+Do not alter existing incident records merely to add embeddings.
+
+If embeddings need to be stored, create a separate additive table keyed to the existing report_analysis record.
+
+==================================================
+28. PATTERN INTELLIGENCE
+==================================================
+
+Route:
+
+/patterns
+
+Show emerging patterns.
+
+Example:
+
+Confined Space
++
+Gas Testing Failure
++
+Maintenance
+
+18 occurrences
+6 in last 30 days
+4 facilities
+
+Trend:
+Increasing
+
+Filters:
+
+- Facility
+- Department
+- Activity
+- Hazard
+- Barrier
+- LSR
+- Equipment
+- Unsafe Act
+- Unsafe Condition
+- Date
+
+IMPORTANT:
+
+Keep:
+
+SIF Potential
+
+and:
+
+Recurrence
+
+as separate concepts.
+
+==================================================
+29. PATTERN GRAPH
+==================================================
+
+Use React Flow.
+
+Example:
+
+Confined Space
+      |
+      ↓
+Gas Testing
+      |
+      ├── Maintenance
+      ├── Vessel
+      |
+      ↓
+Barrier Failure
+      |
+      ↓
+SIF Risk
+
+Nodes should be clickable.
+
+Clicking a node should filter related incidents.
+
+==================================================
+30. RISK PRIORITIZATION
+==================================================
+
+Create an explainable priority engine.
+
+Potential signals:
+
+- SIF potential
+- potential consequence
+- hazard/energy
+- personnel exposure
+- barrier health
+- credible escalation
+- recurrence
+- trend
+
+Do not collapse everything into an opaque number.
+
+Display:
+
+CRITICAL
+
+Why?
+
+✓ High SIF potential
+✓ Critical barrier failed
+✓ Direct worker exposure
+✓ Credible escalation
+✓ Increasing recurrence
+
+Clearly distinguish:
+
+SIF Potential
+Recurrence
+Priority
+
+==================================================
+31. ACTIONS / INTERVENTIONS
+==================================================
+
+Route:
+
+/actions
+
+Create Jira-style board:
+
+TODO
+IN PROGRESS
+VERIFICATION
+CLOSED
+
+Example card:
+
+ACT-021
+Mandatory atmospheric testing
+
+Incident:
+INC-2026-001
+
+Owner:
+Maintenance HSE
+
+Priority:
+CRITICAL
+
+Due:
+18 Sep 2026
+
+Actions must be draggable.
+
+Use optimistic updates.
+
+==================================================
+32. ACTION DETAIL DRAWER
+==================================================
+
+Click action.
+
+Open a side drawer.
+
+Show:
+
+Action ID
+Title
+Incident
+Owner
+Priority
+Due Date
+Status
+Description
+Evidence
+Comments
+Activity
+
+Buttons:
+
+Complete
+Reassign
+Change Due Date
+
+==================================================
+33. COMMENTS
+==================================================
+
+Allow comments on incidents/actions.
+
+Create additive table if needed.
+
+Do not modify report_analysis to store comments.
+
+==================================================
+34. AUDIT ACTIVITY
+==================================================
+
+Create a timeline:
+
+Report created
+Analysis completed
+Priority changed
+Assigned
+Barrier updated
+Action created
+Comment added
+Action completed
+Outcome recorded
+
+Use an additive activity_log table if necessary.
+
+==================================================
+35. INTERVENTION OUTCOME
+==================================================
+
+After action completion:
+
+Show:
+
+BEFORE
+
+SIF Potential
+Priority
+Barrier State
+
+AFTER
+
+SIF Potential
+Priority
+Barrier State
+
+Then:
+
+Was intervention effective?
+
+YES
+PARTIALLY
+NO
+
+Collect:
+
+- evidence
+- reviewer
+- notes
+
+Store this in an additive table.
+
+Do not modify original report_analysis records.
+
+==================================================
+36. NEW INCIDENT
+==================================================
+
+Route or modal:
+
++ New Incident
+
+Fields:
+
+Incident Type
+Title
+Description
+Location
+Facility
+Department
+Date
+Activity
+Equipment
+
+Button:
+
+Analyze with AI
+
+After analysis:
+
+Hazards
+Activity
+Equipment
+Unsafe Act
+Unsafe Condition
+Energy
+Exposure
+Potential Consequence
+SIF Potential
+LSR
+Barriers
+Similar Incidents
+Risk Score
+Recommended Actions
+
+Allow user to review AI results.
+
+Then Save.
+
+IMPORTANT:
+
+If the existing report_analysis table is intended as immutable historical/source data, do not automatically insert new incidents into it unless its schema and intended usage explicitly support new records.
+
+If necessary, create a separate additive application incident table for newly created reports and clearly document the distinction.
+
+==================================================
+37. AI ARCHITECTURE
+==================================================
+
+Create:
+
+AIAnalysisService
+
+with providers:
+
+MockAnalysisProvider
+LLMAnalysisProvider
+
+Initial implementation can use MockAnalysisProvider.
+
+Later support:
+
+LLM
+DistilBERT
+Sentence Transformers
+
+Flow:
+
+Report
+↓
+AI extraction
+↓
+Structured JSON
+↓
+Validation
+↓
+Safety Engine
+↓
+Application storage
+
+Example:
+
+{
+  "activity": "confined space entry",
+  "hazards": ["oxygen deficiency"],
+  "equipment": ["vessel"],
+  "unsafe_acts": ["entry without gas testing"],
+  "barriers": [
+    {
+      "name": "atmospheric testing",
+      "status": "failed"
+    }
+  ],
+  "potential_consequences": ["fatality"]
+}
+
+==================================================
+38. SAFETY ENGINE
+==================================================
+
+Create deterministic services:
+
+calculate_sif_score()
+classify_sif()
+calculate_recurrence_score()
+calculate_priority()
+evaluate_barrier()
+map_life_saving_rule()
+build_escalation_path()
+generate_recommended_actions()
+
+AI extracts information.
+
+Safety Engine applies controlled logic.
+
+Do NOT let the LLM independently invent the risk methodology.
+
+==================================================
+39. DASHBOARD INTERACTIVITY
+==================================================
+
+Make the application highly interactive.
+
+Examples:
+
+Click Critical Incidents
+→ filtered incident board
+
+Click Failed Barrier
+→ related incidents
+
+Click Facility
+→ facility-filtered incidents
+
+Click Pattern
+→ related incidents
+
+Click Similar Incident
+→ incident detail
+
+Click LSR
+→ related incidents
+
+Click Activity
+→ activity-filtered incidents
+
+Charts should act as navigation/filter controls where useful.
+
+==================================================
+40. GLOBAL SEARCH
+==================================================
+
+Create global search.
+
+Search:
+
+- incident ID
+- title
+- description
+- facility
+- department
+- hazard
+- barrier
+- Life-Saving Rule
+- activity
+
+Support keyword search first.
+
+Architecture must support semantic search.
+
+==================================================
+41. AI ASSISTANT
+==================================================
+
+Create persistent:
+
+HSSE AI Assistant
+
+Questions:
+
+"Show all critical SIF precursors from the last 30 days."
+
+"Which barriers are failing most frequently?"
+
+"Find incidents similar to INC-024."
+
+"Why is INC-024 marked critical?"
+
+"Which facilities have increasing SIF risk?"
+
+The assistant must use application data.
+
+It must not fabricate facts.
+
+==================================================
+42. REPORTS
+==================================================
+
+Route:
+
+/reports
+
+Report types:
+
+- SIF precursor report
+- Monthly HSSE report
+- Barrier health report
+- Life-Saving Rule report
+- Emerging risk report
+- Facility-wise report
+- Department-wise report
+- Action effectiveness report
+
+Exports:
+
+PDF
+Excel
+CSV
+
+Prioritize the most important reports first.
+
+==================================================
+43. BACKEND API
+==================================================
+
+Implement:
+
+GET /api/incidents
+GET /api/incidents/{id}
+
+POST /api/incidents
+PUT /api/incidents/{id}
+
+POST /api/incidents/{id}/analyze
+
+GET /api/incidents/{id}/analysis
+GET /api/incidents/{id}/barriers
+GET /api/incidents/{id}/similar
+GET /api/incidents/{id}/actions
+GET /api/incidents/{id}/activity
+
+POST /api/incidents/{id}/comments
+POST /api/incidents/{id}/actions
+
+PUT /api/actions/{id}
+
+GET /api/dashboard/summary
+GET /api/dashboard/trends
+
+GET /api/patterns
+GET /api/barriers
+GET /api/life-saving-rules
+
+POST /api/search/semantic
+
+Add additional endpoints if required.
+
+==================================================
+44. FRONTEND DATA MANAGEMENT
+==================================================
+
+Use TanStack Query for server state.
+
+Use Zustand only for client/global state.
+
+Create typed services:
+
+getIncidents()
+getIncident()
+updateIncident()
+createIncident()
+analyzeIncident()
+getBarriers()
+getSimilarIncidents()
+getActions()
+updateAction()
+getDashboardSummary()
+getPatterns()
+
+==================================================
+45. LOADING / ERROR / EMPTY STATES
+==================================================
+
+Every page must have:
+
+- loading state
+- skeleton state
+- empty state
+- error state
+
+Examples:
+
+"No incidents match your filters."
+
+"No failed barriers found."
+
+"No similar incidents found."
+
+"Analysis has not been generated yet."
+
+==================================================
+46. FALLBACK / DEMO MODE
+==================================================
+
+The application must remain demonstrable if:
+
+- LLM API is unavailable
+- pgvector is unavailable
+- advanced AI is unavailable
+
+Use deterministic/mock analysis where required.
+
+But:
+
+If NeonDB is configured, use the real report_analysis data.
+
+Do not replace the real data with fake data.
+
+==================================================
+47. RESPONSIVENESS
+==================================================
+
+Primary target:
+
+Desktop/laptop.
+
+Support:
+
+Tablet
+Smaller screens
+
+The incident board should horizontally scroll on smaller screens.
+
+Do not destroy the board layout on mobile.
+
+==================================================
+48. ACCESSIBILITY
+==================================================
+
+Implement:
+
+- keyboard navigation
+- focus states
+- semantic buttons
+- accessible dialogs
+- accessible drawers
+- accessible forms
+- adequate contrast
+- tooltips for icon-only buttons
+
+==================================================
+49. PERFORMANCE
+==================================================
+
+Use:
+
+- route lazy loading
+- TanStack Query caching
+- pagination
+- debounced search
+- memoization where useful
+- virtualization if necessary
+
+Do not over-engineer.
+
+==================================================
+50. SECURITY
+==================================================
+
+Database credentials are backend-only.
+
+Validate all API input.
+
+Use Pydantic.
+
+Configure CORS properly.
+
+Do not use unrestricted wildcard CORS for production.
+
+Do not expose internal database errors to users.
+
+==================================================
+51. DATABASE MIGRATION POLICY
+==================================================
+
+ABSOLUTE RULE:
+
+Never perform destructive migrations against the existing database.
+
+Never:
+
+DROP
+TRUNCATE
+DELETE
+RESET
+
+on report_analysis.
+
+If schema changes are required:
+
+- use additive migrations
+- create new tables
+- create new indexes only when safe
+- preserve all existing data
+- document every schema addition
+
+Before any migration, inspect the current schema.
+
+==================================================
+52. DEMO DATA POLICY
+==================================================
+
+The existing report_analysis data is the primary demonstration dataset.
+
+Do not replace it.
+
+If additional data is required for features such as:
+
+- actions
+- comments
+- activity
+- outcomes
+
+create separate additive demo/application records.
+
+Clearly distinguish application-generated records from source incident data.
+
+==================================================
+53. IMPLEMENTATION ORDER
+==================================================
+
+PHASE 1:
+Repository setup
+
+1. Inspect repository
+2. Create frontend
+3. Create backend
+4. Install dependencies
+5. Run:
+
+npx getdesign@latest add nike
+
+6. Configure TypeScript
+7. Configure routing
+8. Build application shell
+
+PHASE 2:
+DATABASE FIRST
+
+9. Connect FastAPI to NeonDB
+10. Inspect report_analysis
+11. Inspect representative rows
+12. Create read-only SQLAlchemy model/mapping
+13. Create Pydantic response schemas
+14. Implement GET /api/incidents
+15. Implement GET /api/incidents/{id}
+
+At this point verify:
+
+Existing report_analysis records appear correctly through the API.
+
+DO NOT modify the database.
+
+PHASE 3:
+CORE FRONTEND
+
+16. Command Center shell
+17. Incident board
+18. Incident cards
+19. Incident filters
+20. Incident list
+21. Board/List toggle
+22. Drag and drop
+23. Optimistic updates
+24. Incident detail
+
+PHASE 4:
+INTELLIGENCE
+
+25. Overview
+26. AI Analysis
+27. SIF Assessment
+28. Evidence
+29. Escalation graph
+30. What-If
+31. Barriers
+32. LSR
+33. Similar incidents
+34. Pattern intelligence
+35. Pattern graph
+36. Risk prioritization
+
+PHASE 5:
+OPERATIONS
+
+37. Actions board
+38. Action drawer
+39. Comments
+40. Activity timeline
+41. Intervention outcome
+42. Feedback loop
+
+PHASE 6:
+DASHBOARDS
+
+43. Command Center
+44. SIF dashboard
+45. Controls dashboard
+46. Facility intelligence
+47. Activity intelligence
+48. Pattern intelligence
+
+PHASE 7:
+AI
+
+49. Mock analysis provider
+50. Safety engine
+51. LLM provider abstraction
+52. Semantic search abstraction
+53. pgvector integration
+54. AI assistant
+
+PHASE 8:
+REPORTING
+
+55. Reports
+56. CSV export
+57. Excel export
+58. PDF export
+
+PHASE 9:
+POLISH
+
+59. Loading states
+60. Empty states
+61. Error states
+62. Responsive behavior
+63. Accessibility
+64. Performance
+65. Final demo flow
+66. Documentation
+
+==================================================
+54. FRONTEND MUST BE THE PRIORITY
+==================================================
+
+The frontend should feel significantly more polished than the backend.
+
+The user should experience:
+
+- instant interactions
+- drag and drop
+- drawers
+- modals
+- tabs
+- inline edits
+- filters
+- charts
+- graphs
+- transitions
+- hover states
+- optimistic updates
+- contextual navigation
+- deep incident investigation
+
+Do not create static mockup screens.
+
+Make the application functional.
+
+==================================================
+55. JIRA-LIKE UX REQUIREMENT
+==================================================
+
+The incident board is a major product requirement.
+
+Users must be able to:
+
+1. See incidents as tickets.
+2. Drag tickets between columns.
+3. Open tickets.
+4. Inspect ticket details.
+5. Change priority.
+6. Change status.
+7. Assign tickets.
+8. Create actions from tickets.
+9. View related incidents.
+10. Navigate back to the board while preserving filters.
+11. Search tickets.
+12. Filter tickets.
+13. Switch between board and list.
+
+Actions must have the same interactive quality.
+
+==================================================
+56. INCIDENT DETAIL UX
+==================================================
+
+The incident detail page should feel like:
+
+Jira issue page
++
+HSSE investigation workspace
++
+AI intelligence console
+
+A user should understand:
+
+WHAT HAPPENED?
+WHY IS IT IMPORTANT?
+WHY IS IT SIF?
+WHAT BARRIER FAILED?
+WHICH LSR APPLIES?
+HAS THIS HAPPENED BEFORE?
+IS IT A PATTERN?
+HOW COULD IT ESCALATE?
+HOW URGENT IS IT?
+WHAT SHOULD WE DO?
+DID THE INTERVENTION WORK?
+
+without leaving the incident workspace.
+
+==================================================
+57. DEMO STORY
+==================================================
+
+The final application must support this demonstration:
+
+1. Open Command Center.
+
+2. Show:
+
+Critical incidents
+SIF potential
+failed barriers
+emerging patterns
+
+3. Click Critical Incidents.
+
+4. Open Jira-style Incident Board.
+
+5. Drag an incident between priority columns.
+
+6. Open the incident.
+
+7. Show Overview.
+
+8. Show AI Analysis.
+
+9. Show:
+
+SIF Potential 92/100
+CRITICAL
+
+10. Show evidence.
+
+11. Open escalation graph.
+
+12. Show:
+
+Hazard
+↓
+Exposure
+↓
+Barrier Failure
+↓
+Escalation
+↓
+Potential Fatality
+
+13. Open Barrier Intelligence.
+
+14. Show:
+
+Atmospheric Testing
+FAILED
+
+15. Show Life-Saving Rule.
+
+16. Show similar historical incidents from report_analysis.
+
+17. Show emerging pattern.
+
+18. Create preventive action.
+
+19. Open Actions Board.
+
+20. Drag:
+
+TODO → IN PROGRESS
+
+21. Complete action.
+
+22. Record intervention outcome.
+
+23. Show:
+
+Before:
+High/Critical Risk
+
+After:
+Reduced Risk / Improved Barrier
+
+This should demonstrate the complete product story.
+
+==================================================
+58. QUALITY CHECKLIST
+==================================================
+
+Before completion verify:
+
+[ ] Frontend starts
+[ ] Backend starts
+[ ] NeonDB connection works
+[ ] report_analysis is readable
+[ ] Existing report_analysis records remain untouched
+[ ] No destructive SQL was executed
+[ ] Incident board works
+[ ] Drag/drop works
+[ ] Optimistic updates work
+[ ] Incident detail works
+[ ] AI Analysis works or has fallback
+[ ] SIF assessment works
+[ ] SIF explanation works
+[ ] Escalation graph works
+[ ] Barrier intelligence works
+[ ] LSR works
+[ ] Similar incidents work
+[ ] Pattern intelligence works
+[ ] Pattern graph works
+[ ] Risk prioritization works
+[ ] Actions board works
+[ ] Action drag/drop works
+[ ] Comments work
+[ ] Activity timeline works
+[ ] Intervention outcome works
+[ ] Dashboard works
+[ ] Filters work
+[ ] Search works
+[ ] Loading states exist
+[ ] Error states exist
+[ ] Empty states exist
+[ ] No credentials are exposed
+[ ] No source data is deleted
+[ ] README exists
+[ ] .env.example exists
+[ ] API documentation exists
+[ ] Components are reusable
+[ ] Core functionality is actually implemented
+
+==================================================
+59. DEVELOPMENT BEHAVIOR
+==================================================
+
+Do not ask me to manually create every file.
+
+Inspect the repository.
+
+Implement the project incrementally.
+
+After each major phase:
+
+1. Run the frontend type check.
+2. Run the frontend build.
+3. Run backend checks.
+4. Verify API responses.
+5. Verify database queries.
+6. Verify that report_analysis was not modified.
+7. Fix errors.
+8. Continue.
+
+If a dependency is missing, install it.
+
+If a package API differs from expectations, inspect the installed version and adapt.
+
+Do not invent APIs.
+
+Do not leave core features as TODOs.
+
+Do not stop after creating the architecture.
+
+Actually build the application.
+
+==================================================
+60. ABSOLUTE DATABASE RULE
+==================================================
+
+This is the most important instruction in the entire prompt:
+
+THE EXISTING report_analysis TABLE AND ITS DATA MUST BE PRESERVED.
+
+The application must USE the existing NeonDB data.
+
+The database is NOT a disposable development database.
+
+DO NOT:
+
+- delete anything
+- truncate anything
+- reset anything
+- recreate anything
+- replace anything
+- overwrite existing records
+- seed fake data into report_analysis
+- modify report_analysis simply to make frontend development easier
+
+Read from it.
+
+Reference it.
+
+Build around it.
+
+If application-specific data is needed, create separate additive tables.
+
+==================================================
+61. DEFINITION OF DONE
+==================================================
+
+The finished system must be a runnable full-stack application.
+
+Frontend:
+
+A polished, interactive enterprise HSSE intelligence application.
+
+Backend:
+
+A clean, basic FastAPI API.
+
+Database:
+
+Existing NeonDB and report_analysis data preserved and used as the source of truth.
+
+Core experience:
+
+Incident Board
+↓
+Drag and Drop
+↓
+Incident Detail
+↓
+AI Analysis
+↓
+SIF Assessment
+↓
+Barrier Failure
+↓
+Life-Saving Rule
+↓
+Historical Similarity
+↓
+Pattern Intelligence
+↓
+Escalation Graph
+↓
+Risk Priority
+↓
+Action
+↓
+Intervention
+↓
+Outcome
+
+The result must NOT be:
+
+- a landing page
+- a generic CRUD dashboard
+- static mockups
+- fake AI
+- a generic SaaS template
+
+Build the actual product.
