@@ -229,6 +229,87 @@ class RiskPriority(Base):
     calculated_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+
+class Intervention(Base):
+    __tablename__ = 'interventions'
+    
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    intervention_id = Column(String, unique=True, default=lambda: f"INT-{uuid.uuid4().hex[:8].upper()}")
+    report_id = Column(String, ForeignKey('sif_reports.report_id'), nullable=True)
+    pattern_id = Column(String, ForeignKey('patterns.pattern_id'), nullable=True)
+    
+    intervention_type = Column(String, nullable=False) # IMMEDIATE_CORRECTIVE, CORRECTIVE, PREVENTIVE, SYSTEMIC, MONITORING
+    title = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    rationale = Column(Text, nullable=True)
+    
+    priority_level = Column(String, nullable=False) # Copied from Stage 6 (CRITICAL, HIGH, etc)
+    intervention_urgency = Column(String, nullable=False) # IMMEDIATE, PRIORITY, CORRECTIVE, MONITOR
+    
+    site_id = Column(String, nullable=True)
+    site_name = Column(String, nullable=True)
+    activity = Column(String, nullable=True)
+    work_area = Column(String, nullable=True)
+    
+    primary_lsr_code = Column(String, nullable=True)
+    primary_barrier_code = Column(String, nullable=True)
+    barrier_status = Column(String, nullable=True)
+    
+    evidence = Column(JSON, nullable=True)
+    
+    recommendation_source = Column(String, default="DETERMINISTIC_PLAYBOOK")
+    model_name = Column(String, nullable=True)
+    model_version = Column(String, nullable=True)
+    
+    status = Column(String, default="OPEN") # OPEN, CLOSED
+    
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    closed_at = Column(DateTime, nullable=True)
+
+class HSEAction(Base):
+    __tablename__ = 'hse_actions'
+    
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    action_id = Column(String, unique=True, default=lambda: f"ACT-{uuid.uuid4().hex[:8].upper()}")
+    intervention_id = Column(String, ForeignKey('interventions.id'), nullable=False)
+    
+    action_title = Column(String, nullable=False)
+    action_description = Column(Text, nullable=True)
+    
+    owner_role = Column(String, default="UNASSIGNED")
+    owner_department = Column(String, default="UNASSIGNED")
+    
+    due_date = Column(DateTime, nullable=True)
+    
+    status = Column(String, default="OPEN") # OPEN, IN_PROGRESS, PENDING_VERIFICATION, CLOSED, REOPENED
+    priority = Column(String, nullable=False)
+    
+    completion_notes = Column(Text, nullable=True)
+    completion_evidence = Column(JSON, nullable=True)
+    
+    escalation_level = Column(String, nullable=True) # LEVEL_1, LEVEL_2, LEVEL_3
+    escalation_reason = Column(Text, nullable=True)
+    
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    completed_at = Column(DateTime, nullable=True)
+
+class ActionVerification(Base):
+    __tablename__ = 'action_verifications'
+    
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    action_id = Column(String, ForeignKey('hse_actions.id'), nullable=False)
+    
+    verification_status = Column(String, nullable=False) # PASSED, FAILED, NOT_VERIFIED
+    verified_by = Column(String, default="UNASSIGNED")
+    verification_date = Column(DateTime, default=datetime.utcnow)
+    
+    verification_notes = Column(Text, nullable=True)
+    verification_evidence = Column(JSON, nullable=True)
+    
+    created_at = Column(DateTime, default=datetime.utcnow)
+
 class PostgresManager:
     def __init__(self):
         # Load environment variables
@@ -682,5 +763,98 @@ class PostgresManager:
             db.rollback()
             print(f"Error bulk saving risk priorities: {e}")
             return False
+        finally:
+            db.close()
+
+    def save_interventions_bulk(self, interventions_data: List[dict]) -> bool:
+        db = self.SessionLocal()
+        try:
+            # We want idempotency based on report_id and pattern_id
+            # For simplicity, if we pass intervention_id we could update, but bulk insert is faster
+            # Interventions are additive or we wipe and rebuild in REBUILD mode
+            report_ids = [d.get('report_id') for d in interventions_data if d.get('report_id')]
+            if report_ids:
+                db.query(Intervention).filter(Intervention.report_id.in_(report_ids)).delete(synchronize_session=False)
+                
+            db.bulk_insert_mappings(Intervention, interventions_data)
+            db.commit()
+            return True
+        except Exception as e:
+            db.rollback()
+            print(f"Error bulk saving interventions: {e}")
+            return False
+        finally:
+            db.close()
+
+    def save_hse_actions_bulk(self, actions_data: List[dict]) -> bool:
+        db = self.SessionLocal()
+        try:
+            db.bulk_insert_mappings(HSEAction, actions_data)
+            db.commit()
+            return True
+        except Exception as e:
+            db.rollback()
+            print(f"Error bulk saving HSE actions: {e}")
+            return False
+        finally:
+            db.close()
+
+    def update_action_status(self, action_id: str, new_status: str, notes: str = None) -> bool:
+        db = self.SessionLocal()
+        try:
+            action = db.query(HSEAction).filter(HSEAction.action_id == action_id).first()
+            if action:
+                action.status = new_status
+                if notes:
+                    action.completion_notes = notes
+                if new_status == "CLOSED":
+                    action.completed_at = datetime.utcnow()
+                db.commit()
+                return True
+            return False
+        except Exception as e:
+            db.rollback()
+            print(f"Error updating action {action_id}: {e}")
+            return False
+        finally:
+            db.close()
+
+    def save_action_verification(self, verification_data: dict) -> bool:
+        db = self.SessionLocal()
+        try:
+            record = ActionVerification(**verification_data)
+            db.add(record)
+            
+            # Also update action status
+            action = db.query(HSEAction).filter(HSEAction.id == verification_data['action_id']).first()
+            if action:
+                if verification_data['verification_status'] == 'PASSED':
+                    action.status = "CLOSED"
+                    action.completed_at = datetime.utcnow()
+                elif verification_data['verification_status'] == 'FAILED':
+                    action.status = "REOPENED"
+            db.commit()
+            return True
+        except Exception as e:
+            db.rollback()
+            print(f"Error saving verification: {e}")
+            return False
+        finally:
+            db.close()
+            
+    def get_interventions(self, limit: int = 50):
+        db = self.SessionLocal()
+        try:
+            # Sort by created desc
+            results = db.query(Intervention).order_by(Intervention.created_at.desc()).limit(limit).all()
+            return results
+        finally:
+            db.close()
+            
+    def get_actions(self, limit: int = 50):
+        db = self.SessionLocal()
+        try:
+            results = db.query(HSEAction).order_by(HSEAction.created_at.desc()).limit(limit).all()
+            return results
         finally:
             db.close()

@@ -524,6 +524,115 @@ async def get_risk_priority(report_id: str):
         db.close()
 
 
+# --- STAGE 7: INTERVENTIONS & HSE ACTIONS ---
+
+@app.post("/interventions/generate/{report_id}")
+async def generate_intervention(report_id: str):
+    # For a single report, we can just run the rebuild engine since it does bulk, 
+    # but normally we would want a single report generator.
+    # For now, trigger the full engine or a targeted one.
+    db = vector_store.SessionLocal()
+    try:
+        from ai.intervention.engine import InterventionEngine
+        engine = InterventionEngine()
+        # To keep it simple for the hackathon, we'll just return a message saying to use bulk.
+        # But we could implement a targeted one.
+        return {"message": "Use CLI bulk generation for interventions.", "status": "NotImplemented"}
+    finally:
+        db.close()
+
+@app.get("/interventions")
+async def get_interventions(limit: int = 50):
+    try:
+        results = vector_store.get_interventions(limit)
+        return [r.__dict__ for r in results]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/interventions/{intervention_id}")
+async def get_intervention(intervention_id: str):
+    db = vector_store.SessionLocal()
+    try:
+        from vector_store import Intervention
+        inv = db.query(Intervention).filter(Intervention.intervention_id == intervention_id).first()
+        if not inv:
+            raise HTTPException(status_code=404, detail="Intervention not found")
+        return inv.__dict__
+    finally:
+        db.close()
+
+@app.get("/actions")
+async def get_actions(limit: int = 50, status: str = None):
+    db = vector_store.SessionLocal()
+    try:
+        from vector_store import HSEAction
+        query = db.query(HSEAction)
+        if status:
+            query = query.filter(HSEAction.status == status)
+        results = query.order_by(HSEAction.created_at.desc()).limit(limit).all()
+        return [r.__dict__ for r in results]
+    finally:
+        db.close()
+
+@app.post("/actions/{action_id}/verify")
+async def verify_action(action_id: str, payload: dict):
+    # payload: {"status": "PASSED" or "FAILED", "notes": "...", "verified_by": "..."}
+    status = payload.get("status")
+    if status not in ["PASSED", "FAILED"]:
+        raise HTTPException(status_code=400, detail="Invalid verification status")
+        
+    db = vector_store.SessionLocal()
+    try:
+        from vector_store import HSEAction
+        action = db.query(HSEAction).filter(HSEAction.action_id == action_id).first()
+        if not action:
+            raise HTTPException(status_code=404, detail="Action not found")
+            
+        from ai.intervention.verifier import ActionVerifier
+        try:
+            new_status = ActionVerifier.verify(action.status, status)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+            
+        ver_data = {
+            "action_id": action.id,
+            "verification_status": status,
+            "verified_by": payload.get("verified_by", "API_USER"),
+            "verification_notes": payload.get("notes")
+        }
+        vector_store.save_action_verification(ver_data)
+        
+        return {"action_id": action_id, "new_status": new_status, "verification": status}
+    finally:
+        db.close()
+
+@app.post("/actions/{action_id}/reopen")
+async def reopen_action(action_id: str):
+    success = vector_store.update_action_status(action_id, "REOPENED", "Reopened via API")
+    if success:
+        return {"action_id": action_id, "status": "REOPENED"}
+    raise HTTPException(status_code=400, detail="Could not reopen action")
+
+@app.get("/interventions/summary")
+async def get_intervention_summary():
+    db = vector_store.SessionLocal()
+    try:
+        from vector_store import Intervention, HSEAction
+        total_inv = db.query(Intervention).count()
+        sys_inv = db.query(Intervention).filter(Intervention.intervention_type == "SYSTEMIC").count()
+        total_actions = db.query(HSEAction).count()
+        open_actions = db.query(HSEAction).filter(HSEAction.status.in_(["OPEN", "IN_PROGRESS", "REOPENED"])).count()
+        pending_ver = db.query(HSEAction).filter(HSEAction.status == "PENDING_VERIFICATION").count()
+        
+        return {
+            "total_interventions": total_inv,
+            "systemic_interventions": sys_inv,
+            "total_actions": total_actions,
+            "open_actions": open_actions,
+            "pending_verification": pending_ver
+        }
+    finally:
+        db.close()
 
 if __name__ == "__main__":
     import uvicorn
