@@ -436,192 +436,142 @@ def _generate_next_report_id(db: Session) -> str:
 
 
 def process_safety_intelligence(db: Session, report: SifReport) -> ReportAnalysis:
-    """Run deterministic safety NLP/intelligence rules, map barriers & LSRs, and build vector embeddings."""
-    desc_lower = (report.description or "").lower()
-    act_lower = (report.activity or "").lower()
-    text_corpus = f"{desc_lower} {act_lower}"
+    """Run safety NLP/intelligence rules via Gemini, map barriers & LSRs, and build vector embeddings."""
+    from app.services.ai_pipeline import run_gemini_analysis
 
-    # Analyze hazard and energy source
-    if any(k in text_corpus for k in ["valve", "depressuriz", "pressure", "bleed", "pipeline"]):
-        hazard = "Premature valve manipulation on pressurized hydrocarbon or fluid line"
-        energy_source = "Pressurized Hydrocarbon / Pneumatic Energy"
-        unsafe_act = "Opening pipeline valve before confirming full system depressurization"
-        unsafe_condition = "Line remained under residual operating pressure without verified isolation"
-        missing_controls = "Depressurization verification, calibrated pressure gauge check, double isolation & bleed (LOTO)"
-        existing_controls = "Standard operating procedures, PPE"
-        potential_consequence = "High-pressure line rupture, explosive hydrocarbon release, or struck-by projectile leading to fatal injury"
-        actual_consequence = "No injury occurred"
-        sif_potential = True
-        sif_score = 91.0
-    elif any(k in text_corpus for k in ["height", "fall", "ladder", "scaffold", "elevated", "roof"]):
-        hazard = "Personnel working at elevated level without adequate fall arrest / restraint"
-        energy_source = "Gravitational Potential Energy"
-        unsafe_act = "Working at height without 100% tie-off or edge protection"
-        unsafe_condition = "Unprotected elevated working surface"
-        missing_controls = "Full-body harness with shock-absorbing lanyard, certified anchor points, guardrails"
-        existing_controls = "Safety helmet, work boots"
-        potential_consequence = "Fall from height resulting in fatal trauma"
-        actual_consequence = "No injury occurred"
-        sif_potential = True
-        sif_score = 88.0
-    elif any(k in text_corpus for k in ["crane", "lift", "sling", "rigging", "suspended", "hoist"]):
-        hazard = "Suspended load movement with personnel in line of fire"
-        energy_source = "Kinetic / Gravitational Potential Energy"
-        unsafe_act = "Positioned within swing radius or underneath suspended load"
-        unsafe_condition = "Lifting operation without established exclusion zone"
-        missing_controls = "Certified lift plan, barricaded exclusion perimeter, designated banksman/spotter, tag lines"
-        existing_controls = "Safety helmet, high-visibility vest"
-        potential_consequence = "Load drop or crush impact causing catastrophic or fatal trauma"
-        actual_consequence = "No injury occurred"
-        sif_potential = True
-        sif_score = 92.0
-    elif any(k in text_corpus for k in ["confined", "tank", "vessel", "pit", "gas", "h2s", "toxic"]):
-        hazard = "Atmospheric entry or proximity to hazardous toxic vapour / gas release"
-        energy_source = "Chemical / Toxic Energy"
-        unsafe_act = "Atmospheric entry or operation prior to continuous multi-gas monitoring"
-        unsafe_condition = "Potentially hazardous or oxygen-deficient atmosphere"
-        missing_controls = "Continuous calibrated multi-gas detector, forced ventilation, standby rescue team, entry permit"
-        existing_controls = "Basic escape respirator"
-        potential_consequence = "Acute toxic inhalation, asphyxiation, or fatal toxic exposure"
-        actual_consequence = "No injury occurred"
-        sif_potential = True
-        sif_score = 94.0
-    elif any(k in text_corpus for k in ["electric", "wire", "conductor", "shock", "voltage", "switchboard"]):
-        hazard = "Contact with energized electrical conductor"
-        energy_source = "Electrical Energy"
-        unsafe_act = "Maintenance initiated without zero-energy verification and earthing"
-        unsafe_condition = "Unshielded live electrical terminal"
-        missing_controls = "Electrical LOTO, rated insulating gloves, voltage detector testing, earth bonding"
-        existing_controls = "Insulated hand tools"
-        potential_consequence = "High-voltage electrocution or arc flash causing fatal burns"
-        actual_consequence = "No injury occurred"
-        sif_potential = True
-        sif_score = 90.0
-    elif any(k in text_corpus for k in ["hot work", "weld", "spark", "flame", "cutting", "grinding"]):
-        hazard = "Ignition source in hydrocarbon processing vicinity"
-        energy_source = "Thermal / Chemical Energy"
-        unsafe_act = "Performing hot work without gas-free atmospheric clearance"
-        unsafe_condition = "Flammable vapour presence near ignition source"
-        missing_controls = "Hot work permit, fire watch, continuous LEL gas detector, spark containment blankets"
-        existing_controls = "Fire extinguisher present"
-        potential_consequence = "Flash fire or vapor cloud explosion leading to fatal burns"
-        actual_consequence = "No injury occurred"
-        sif_potential = True
-        sif_score = 86.0
-    else:
-        hazard = f"Unsafe condition during {report.activity or 'work'}"
-        energy_source = "Mechanical / Environmental Energy"
-        unsafe_act = "Operation without complete adherence to safe work procedures"
-        unsafe_condition = "Deviation from standard control hierarchy"
-        missing_controls = "Job Safety Analysis (JSA) review, pre-task hazard assessment"
-        existing_controls = "General PPE"
-        potential_consequence = "Personnel injury requiring medical treatment"
-        actual_consequence = "No injury reported"
-        sif_potential = False
-        sif_score = 48.0
+    report_dict = {
+        "report_id": report.report_id,
+        "report_date": report.report_date,
+        "time": report.time,
+        "site_name": report.site_name,
+        "region": report.region,
+        "location": report.location,
+        "department": report.department,
+        "report_type": report.report_type,
+        "activity": report.activity,
+        "description": report.description,
+        "source": report.source
+    }
 
-    sif_classification = "SIF_POTENTIAL" if sif_potential else "NON_SIF"
-    exposure_status = "NEAR_MISS" if (report.report_type or "").lower() == "near_miss" else ("DOCUMENTED" if sif_potential else "POTENTIAL")
+    ai_data = run_gemini_analysis(report_dict)
 
-    causal_chain = [
-        f"Activity '{report.activity or 'Operational task'}' initiated at {report.location or 'worksite'}",
-        f"Primary barrier failure / unsafe act: {unsafe_act}",
-        f"Personnel line-of-fire exposure to {energy_source}",
-        f"Escalation pathway: Potential consequence: {potential_consequence}"
-    ]
-    key_evidence = [
-        report.description or "Reported safety occurrence",
-        f"Hazard identification: {hazard}",
-        f"Critical missing controls: {missing_controls}"
-    ]
-    sif_evidence = [
-        f"Stored energy ({energy_source}) with immediate worker proximity and absent positive barrier."
-    ] if sif_potential else []
+    if not ai_data:
+        # Fallback if AI fails: create minimal analysis record so UI doesn't break
+        logger.warning(f"AI analysis failed for {report.report_id}, using fallback.")
+        analysis = ReportAnalysis(
+            analysis_id=str(uuid.uuid4()),
+            report_id=report.report_id,
+            hazard=f"Unsafe condition during {report.activity or 'work'}",
+            model_name="fallback-error",
+            sif_potential=False,
+            sif_score=0.0
+        )
+        db.add(analysis)
+        db.commit()
+        db.refresh(analysis)
+        return analysis
 
-    sif_reasoning = (
-        f"The incident involves {energy_source} during {report.activity or 'operations'}. "
-        f"Critical control barrier ({missing_controls}) was missing or bypassed. "
-        f"Under operating conditions, failure would have escalated directly to fatal or catastrophic consequence."
-    ) if sif_potential else "Low kinetic/energy potential without direct credible pathway to fatal consequence."
-
+    # Parse and save AI results
+    # 1. Report Analysis
+    ra_data = ai_data.get("report_analysis", {}).get("schema", {})
+    if not ra_data:
+        ra_data = ai_data.get("report_analysis", {}) # sometimes models don't follow the nested structure
+    
     analysis = ReportAnalysis(
         analysis_id=str(uuid.uuid4()),
         report_id=report.report_id,
-        unsafe_act=unsafe_act,
-        unsafe_condition=unsafe_condition,
-        hazard=hazard,
-        energy_source=energy_source,
-        worker_exposure="Worker directly positioned in line of fire / hazardous zone during operation",
-        existing_controls=existing_controls,
-        missing_controls=missing_controls,
-        potential_consequence=potential_consequence,
-        actual_consequence=actual_consequence,
-        causal_chain=causal_chain,
-        key_evidence=key_evidence,
-        model_name="safety-nlp-engine/v2",
-        model_version="2.0",
-        analyzed_at=datetime.utcnow(),
-        sif_potential=sif_potential,
-        sif_score=sif_score,
-        sif_classification=sif_classification,
-        hazard_severity_score=5.0 if sif_potential else 2.5,
-        energy_score=4.5 if sif_potential else 2.0,
-        exposure_score=4.5 if sif_potential else 2.5,
-        consequence_score=5.0 if sif_potential else 2.0,
-        barrier_failure_score=4.5 if sif_potential else 2.0,
-        causal_chain_score=4.0 if sif_potential else 2.0,
-        sif_evidence=sif_evidence,
-        sif_reasoning=sif_reasoning,
-        sif_model_version="sif-v2-safety-engine",
-        sif_analyzed_at=datetime.utcnow(),
-        sif_pathway_credibility=0.92 if sif_potential else 0.35,
-        exposure_immediacy=0.88 if sif_potential else 0.40,
-        escalation_evidence=0.85 if sif_potential else 0.30,
-        sif_mechanism_strength=0.90 if sif_potential else 0.35,
-        confidence=0.93,
-        exposure_status=exposure_status,
+        unsafe_act=ra_data.get("unsafe_act"),
+        unsafe_condition=ra_data.get("unsafe_condition"),
+        hazard=ra_data.get("hazard"),
+        energy_source=ra_data.get("energy_source"),
+        worker_exposure=ra_data.get("worker_exposure"),
+        existing_controls=ra_data.get("existing_controls"),
+        missing_controls=ra_data.get("missing_controls"),
+        potential_consequence=ra_data.get("potential_consequence"),
+        actual_consequence=ra_data.get("actual_consequence"),
+        causal_chain=ra_data.get("causal_chain", []),
+        key_evidence=ra_data.get("key_evidence", []),
+        sif_potential=ra_data.get("sif_potential", False),
+        sif_score=float(ra_data.get("sif_score", 0.0)),
+        sif_classification=ra_data.get("sif_classification", "NON_SIF"),
+        hazard_severity_score=float(ra_data.get("hazard_severity_score", 0.0)),
+        energy_score=float(ra_data.get("energy_score", 0.0)),
+        exposure_score=float(ra_data.get("exposure_score", 0.0)),
+        consequence_score=float(ra_data.get("consequence_score", 0.0)),
+        barrier_failure_score=float(ra_data.get("barrier_failure_score", 0.0)),
+        sif_reasoning=ra_data.get("sif_reasoning"),
+        sif_pathway_credibility=float(ra_data.get("sif_pathway_credibility", 0.0)),
+        exposure_immediacy=float(ra_data.get("exposure_immediacy", 0.0)),
+        escalation_evidence=float(ra_data.get("escalation_evidence", 0.0)),
+        sif_mechanism_strength=float(ra_data.get("sif_mechanism_strength", 0.0)),
+        exposure_status=ra_data.get("exposure_status"),
+        model_name="gemini-2.5-flash",
+        analyzed_at=datetime.utcnow()
     )
     db.add(analysis)
 
-    # Link barriers
-    for b_code, kw_list in BARRIER_KEYWORDS.items():
-        if any(kw in text_corpus for kw in kw_list):
-            b_record = db.query(Barrier).filter(Barrier.barrier_code == b_code).first()
-            if b_record:
-                rb = ReportBarrier(
-                    id=str(uuid.uuid4()),
-                    report_id=report.report_id,
-                    barrier_id=b_record.barrier_id,
-                    status="FAILED" if sif_potential else "EFFECTIVE",
-                    criticality=0.9 if sif_potential else 0.5,
-                    confidence=0.92,
-                    evidence=[report.description or ""],
-                    reasoning=f"Critical barrier '{b_record.barrier_name}' was degraded, missing, or bypassed.",
-                    mapping_method="SAFETY_NLP_ENGINE",
-                    created_at=datetime.utcnow(),
-                    updated_at=datetime.utcnow(),
-                )
-                db.add(rb)
+    # 2. Report Rules
+    rules_data = ai_data.get("report_rules", {}).get("schema", [])
+    if not isinstance(rules_data, list):
+        rules_data = ai_data.get("report_rules", [])
+        
+    for r in rules_data:
+        rr = ReportRule(
+            id=str(uuid.uuid4()),
+            report_id=report.report_id,
+            rule_id=r.get("rule_id", "UNKNOWN"),
+            confidence=float(r.get("confidence", 0.0)),
+            priority=r.get("priority", "SECONDARY"),
+            trigger=r.get("trigger"),
+            evidence=r.get("evidence", {}).get("extracted_text") if isinstance(r.get("evidence"), dict) else r.get("evidence"),
+            reasoning=r.get("reasoning"),
+            mapping_method="gemini-2.5-flash",
+            created_at=datetime.utcnow(),
+        )
+        # Verify if rule_id actually exists in LifeSavingRule catalog, else skip or link to generic
+        db.add(rr)
 
-    # Link Life Saving Rules
-    for r_code, kw_list in LSR_KEYWORDS.items():
-        if any(kw in text_corpus for kw in kw_list):
-            rule_record = db.query(LifeSavingRule).filter(LifeSavingRule.rule_code == r_code).first()
-            if rule_record:
-                rr = ReportRule(
-                    id=str(uuid.uuid4()),
-                    report_id=report.report_id,
-                    rule_id=rule_record.rule_id,
-                    confidence=0.94,
-                    priority="HIGH",
-                    trigger=rule_record.rule_name,
-                    evidence=[report.description or ""],
-                    reasoning=f"Applicable IOGP Life-Saving Rule: '{rule_record.rule_name}'.",
-                    mapping_method="SAFETY_NLP_ENGINE",
-                    created_at=datetime.utcnow(),
-                )
-                db.add(rr)
+    # 3. Report Barriers
+    barriers_data = ai_data.get("report_barriers", {}).get("schema", [])
+    if not isinstance(barriers_data, list):
+        barriers_data = ai_data.get("report_barriers", [])
+        
+    for b in barriers_data:
+        rb = ReportBarrier(
+            id=str(uuid.uuid4()),
+            report_id=report.report_id,
+            barrier_id=b.get("barrier_id", "UNKNOWN"),
+            status=b.get("status", "UNKNOWN"),
+            criticality=float(b.get("criticality", 0.0)),
+            confidence=float(b.get("confidence", 0.0)),
+            evidence=b.get("evidence", {}).get("extracted_text") if isinstance(b.get("evidence"), dict) else b.get("evidence"),
+            reasoning=b.get("reasoning"),
+            mapping_method="gemini-2.5-flash",
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow()
+        )
+        db.add(rb)
 
+    # 4. Incident Actions
+    actions_data = ai_data.get("incident_actions", {}).get("schema", [])
+    if not isinstance(actions_data, list):
+        actions_data = ai_data.get("incident_actions", [])
+        
+    for act in actions_data:
+        ia = IncidentAction(
+            id=str(uuid.uuid4()),
+            report_id=report.report_id,
+            title=act.get("title", "Recommended Action"),
+            description=act.get("description", ""),
+            owner=act.get("owner", "UNASSIGNED"),
+            priority=act.get("priority", "IMMEDIATE"),
+            status=act.get("status", "TODO"),
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow()
+        )
+        db.add(ia)
+
+    # Note: IncidentMeta is handled via `_get_or_create_meta` and SifReport is already created
     db.commit()
     db.refresh(analysis)
 
@@ -629,7 +579,7 @@ def process_safety_intelligence(db: Session, report: SifReport) -> ReportAnalysi
     try:
         from sentence_transformers import SentenceTransformer
         model = SentenceTransformer("all-MiniLM-L6-v2")
-        embed_text = f"{report.report_type} {report.activity or ''} {report.description} {hazard} {energy_source}"
+        embed_text = f"{report.report_type} {report.activity or ''} {report.description} {analysis.hazard} {analysis.energy_source}"
         vec = model.encode(embed_text, normalize_embeddings=True)
         vec_str = "[" + ",".join(str(x) for x in vec.tolist()) + "]"
         db.execute(text("""

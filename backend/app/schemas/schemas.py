@@ -474,3 +474,25 @@ class OutcomeResponse(OutcomeCreate):
     created_at: Optional[str] = None
 
     model_config = {"from_attributes": True}
+
+
+# =====================================================
+# FORM SUBMISSION SCHEMAS
+# =====================================================
+
+class FormSubmitRequest(BaseModel):
+    report_date: str
+    time: str
+    site_name: str
+    region: str
+    location: str
+    department: str
+    report_type: str
+    activity: str
+    description: str
+
+
+class FormSubmitResponse(BaseModel):
+    message: str
+    report_id: str
+
