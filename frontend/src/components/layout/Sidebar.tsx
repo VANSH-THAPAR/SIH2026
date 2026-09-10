@@ -1,113 +1,133 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
 import {
- LayoutDashboard,
- AlertTriangle,
- ShieldCheck,
- Brain,
- BarChart3,
- Settings,
- Flame,
- Activity,
- PlusCircle,
+  LayoutDashboard,
+  AlertTriangle,
+  ShieldCheck,
+  Brain,
+  BarChart3,
+  Settings,
+  Flame,
+  Radio,
+  PlusCircle,
 } from 'lucide-react';
 import { useState } from 'react';
 import { NewReportForm } from '../forms/NewReportForm';
 
 const NAV_ITEMS = [
- { path: '/', label: 'Command Center', icon: LayoutDashboard, exact: true },
- { path: '/incidents', label: 'Incident Board', icon: AlertTriangle },
- { path: '/sif', label: 'SIF Intelligence', icon: Flame },
- { path: '/controls', label: 'Safety Controls', icon: ShieldCheck },
- { path: '/patterns', label: 'Pattern Intel', icon: Brain },
- { path: '/reports', label: 'Reports', icon: BarChart3 },
- { path: '/admin', label: 'Administration', icon: Settings },
+  { path: '/', label: 'Command Center', icon: LayoutDashboard, exact: true },
+  { path: '/incidents', label: 'Incident Board', icon: AlertTriangle },
+  { path: '/sif', label: 'SIF Intelligence', icon: Flame },
+  { path: '/controls', label: 'Safety Controls', icon: ShieldCheck },
+  { path: '/patterns', label: 'Pattern Intel', icon: Brain },
+  { path: '/reports', label: 'QISD Audits', icon: BarChart3 },
+  { path: '/admin', label: 'Administration', icon: Settings },
 ];
 
 export function Sidebar() {
- const location = useLocation();
- const [isNewReportOpen, setIsNewReportOpen] = useState(false);
+  const location = useLocation();
+  const [isNewReportOpen, setIsNewReportOpen] = useState(false);
 
- return (
- <div
- className="flex flex-col h-full"
- style={{ width: 240, background: '#0F2744', flexShrink: 0 }}
- >
- {/* Logo / Brand */}
- <div className="px-4 py-4 border-b border-white/10">
- <div className="flex items-center gap-2">
- <div
- className="flex items-center justify-center rounded"
- style={{ width: 28, height: 28, background: '#3F3F46' }}
- >
- <Activity className="w-4 h-4 text-canvas" />
- </div>
- <div>
- <div className="text-canvas font-bold text-xs leading-tight">OIL SIF</div>
- <div className="text-mute text-[10px]">Intelligence Platform</div>
- </div>
- </div>
- </div>
+  return (
+    <div
+      className="flex flex-col h-full"
+      style={{ width: 220, background: '#FFFFFF', flexShrink: 0, borderRight: '1px solid #F0F0F0' }}
+    >
+      {/* Logo / Brand */}
+      <div className="px-5 py-4 border-b border-slate-100">
+        <div className="flex items-center gap-2.5 mb-0.5">
+          {/* Logo mark */}
+          <div
+            className="flex items-center justify-center rounded-lg"
+            style={{ width: 32, height: 32, background: 'linear-gradient(135deg, #1B3A6B 0%, #2563EB 100%)' }}
+          >
+            <span className="text-white font-black text-xs tracking-tight">OIL</span>
+          </div>
+          <div>
+            <div className="font-black text-[13px] leading-none text-slate-900 tracking-tight">INDIANOIL</div>
+            <div className="text-[10px] text-slate-400 tracking-wider uppercase font-medium mt-0.5">MAKASTAS</div>
+          </div>
+        </div>
+        <div className="text-[10px] text-slate-400 mt-2 font-medium">HSSE Intelligence System</div>
+      </div>
 
- {/* Navigation */}
- <nav className="flex-1 overflow-y-auto py-2">
- <div className="px-3 mb-4 mt-2">
- <button
- onClick={() => setIsNewReportOpen(true)}
- className="flex items-center justify-center gap-2 w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold transition-colors"
- >
- <PlusCircle className="w-4 h-4" />
- New Report
- </button>
- </div>
- <div className="px-2">
- <p className="text-[10px] font-semibold uppercase tracking-widest text-mute/60 px-2 py-2 mt-1">
- Main Menu
- </p>
- {NAV_ITEMS.map((item) => {
- const Icon = item.icon;
- const isActive = item.exact
- ? location.pathname === item.path
- : location.pathname.startsWith(item.path) && item.path !== '/';
+      {/* Live Telemetry pill */}
+      <div className="px-4 pt-4 pb-2">
+        <div className="flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-2 border border-slate-100">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          <span className="text-[11px] font-semibold text-slate-600 uppercase tracking-widest">Live Telemetry</span>
+          <Radio className="w-3 h-3 text-emerald-500 ml-auto" />
+        </div>
+      </div>
 
- return (
- <NavLink
- key={item.path}
- to={item.path}
- className={clsx(
- 'flex items-center gap-2.5 px-3 py-2 rounded text-[12px] font-medium mb-0.5 transition-colors',
- isActive
- ? 'bg-ink text-canvas'
- : 'text-blue-100/70 hover:text-canvas hover:bg-canvas/10'
- )}
- >
- <Icon className="w-3.5 h-3.5 flex-shrink-0" />
- <span className="truncate">{item.label}</span>
- </NavLink>
- );
- })}
- </div>
- </nav>
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto pt-2 px-3">
+        <div className="space-y-0.5">
+          {NAV_ITEMS.map((item) => {
+            const Icon = item.icon;
+            const isActive = item.exact
+              ? location.pathname === item.path
+              : location.pathname.startsWith(item.path) && item.path !== '/';
 
- {/* Bottom section */}
- <div className="p-3 border-t border-white/10">
- <div className="flex items-center gap-2 px-2">
- <div
- className="flex items-center justify-center rounded-full text-canvas text-[10px] font-bold"
- style={{ width: 24, height: 24, background: '#3F3F46' }}
- >
- OP
- </div>
- <div className="overflow-hidden">
- <div className="text-canvas text-[11px] font-medium truncate">OPS Administrator</div>
- <div className="text-mute/60 text-[10px]">HSE Manager</div>
- </div>
- </div>
- </div>
+            return (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                className={clsx(
+                  'flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all',
+                  isActive
+                    ? 'bg-blue-600 text-white shadow-[0_2px_8px_rgba(37,99,235,0.3)]'
+                    : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                )}
+              >
+                <Icon
+                  className={clsx('w-4 h-4 flex-shrink-0', isActive ? 'text-white' : 'text-slate-400')}
+                />
+                <span className="truncate">{item.label}</span>
+              </NavLink>
+            );
+          })}
+        </div>
+      </nav>
 
- {isNewReportOpen && (
- <NewReportForm onClose={() => setIsNewReportOpen(false)} />
- )}
- </div>
- );
+      {/* New Report CTA */}
+      <div className="px-3 pb-3">
+        <button
+          onClick={() => setIsNewReportOpen(true)}
+          className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-xs font-semibold transition-all"
+          style={{
+            background: 'linear-gradient(135deg, #1B3A6B 0%, #2563EB 100%)',
+            color: '#FFFFFF',
+            boxShadow: '0 2px 8px rgba(37,99,235,0.3)',
+          }}
+        >
+          <PlusCircle className="w-3.5 h-3.5" />
+          New SIF Report
+        </button>
+      </div>
+
+      {/* Bottom user section */}
+      <div className="px-4 py-3 border-t border-slate-100">
+        <div className="flex items-center gap-2.5">
+          <div
+            className="flex items-center justify-center rounded-full text-white text-[10px] font-bold flex-shrink-0"
+            style={{ width: 28, height: 28, background: '#1B3A6B' }}
+          >
+            OP
+          </div>
+          <div className="overflow-hidden flex-1 min-w-0">
+            <div className="text-slate-800 text-[12px] font-semibold truncate">OPS Administrator</div>
+            <div className="text-slate-400 text-[10px]">HSE Manager</div>
+          </div>
+        </div>
+      </div>
+
+      {isNewReportOpen && (
+        <NewReportForm onClose={() => setIsNewReportOpen(false)} />
+      )}
+    </div>
+  );
 }

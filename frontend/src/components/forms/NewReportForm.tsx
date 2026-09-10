@@ -32,7 +32,7 @@ export function NewReportForm({ onClose }: NewReportFormProps) {
   const mutation = useMutation({
     mutationFn: createIncident,
     onSuccess: (data) => {
-      addToast(`Incident report created successfully (${data.id || data.report_id})`, 'success');
+      addToast(`Incident report created successfully (${data.id || (data as any).report_id})`, 'success');
       queryClient.invalidateQueries({ queryKey: ['incidents'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       onClose();

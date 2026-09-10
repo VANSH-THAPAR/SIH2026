@@ -50,17 +50,17 @@ export const fetchIncidents = async (
  if (filters.sif_min !== '' && filters.sif_min !== undefined) params.set('sif_min', String(filters.sif_min));
  if (filters.sif_max !== '' && filters.sif_max !== undefined) params.set('sif_max', String(filters.sif_max));
  const res = await api.get<PaginatedResponse<IncidentSummary>>(`/incidents?${params.toString()}`);
- return res.data.patterns || res.data;
+ return res.data;
 };
 
 export const fetchIncident = async (id: string): Promise<IncidentDetail> => {
  const res = await api.get<IncidentDetail>(`/incidents/${id}`);
- return res.data.patterns || res.data;
+ return res.data;
 };
 
 export const createIncident = async (body: IncidentCreate): Promise<IncidentSummary> => {
  const res = await api.post<IncidentSummary>('/incidents', body);
- return res.data.patterns || res.data;
+ return res.data;
 };
 
 export const updateIncident = async (
@@ -68,12 +68,12 @@ export const updateIncident = async (
  body: { priority?: Priority; status?: string; assigned_to?: string }
 ): Promise<IncidentDetail> => {
  const res = await api.put<IncidentDetail>(`/incidents/${id}`, body);
- return res.data.patterns || res.data;
+ return res.data;
 };
 
 export const fetchIncidentActions = async (id: string): Promise<ActionSummary[]> => {
  const res = await api.get<ActionSummary[]>(`/incidents/${id}/actions`);
- return res.data.patterns || res.data;
+ return res.data;
 };
 
 export const createIncidentAction = async (
@@ -81,7 +81,7 @@ export const createIncidentAction = async (
  body: { title: string; description: string; owner: string; priority: Priority; due_date: string }
 ): Promise<ActionSummary> => {
  const res = await api.post<ActionSummary>(`/incidents/${id}/actions`, body);
- return res.data.patterns || res.data;
+ return res.data;
 };
 
 export const createComment = async (
@@ -89,22 +89,22 @@ export const createComment = async (
  body: { author: string; content: string }
 ): Promise<Comment> => {
  const res = await api.post<Comment>(`/incidents/${id}/comments`, body);
- return res.data.patterns || res.data;
+ return res.data;
 };
 
 export const fetchComments = async (id: string): Promise<Comment[]> => {
  const res = await api.get<Comment[]>(`/incidents/${id}/comments`);
- return res.data.patterns || res.data;
+ return res.data;
 };
 
 export const fetchActivity = async (id: string): Promise<ActivityEvent[]> => {
  const res = await api.get<ActivityEvent[]>(`/incidents/${id}/activity`);
- return res.data.patterns || res.data;
+ return res.data;
 };
 
 export const fetchSimilarIncidents = async (id: string): Promise<IncidentSummary[]> => {
  const res = await api.get<IncidentSummary[]>(`/incidents/${id}/similar`);
- return res.data.patterns || res.data;
+ return res.data;
 };
 
 // ─── Actions ─────────────────────────────────────────────────────────────────
@@ -115,7 +115,7 @@ export const fetchActions = async (filters: Partial<ActionFilters> = {}): Promis
  if (filters.priority) params.set('priority', filters.priority);
  if (filters.report_id) params.set('report_id', filters.report_id);
  const res = await api.get<ActionSummary[]>(`/actions?${params.toString()}`);
- return res.data.patterns || res.data;
+ return res.data;
 };
 
 export const updateAction = async (
@@ -123,7 +123,7 @@ export const updateAction = async (
  body: { title?: string; status?: ActionStatus; owner?: string; priority?: Priority; due_date?: string }
 ): Promise<ActionSummary> => {
  const res = await api.put<ActionSummary>(`/actions/${id}`, body);
- return res.data.patterns || res.data;
+ return res.data;
 };
 
 export const createActionOutcome = async (
@@ -137,12 +137,12 @@ export const createActionOutcome = async (
 
 export const fetchDashboardKPIs = async (): Promise<DashboardKPIs> => {
  const res = await api.get<DashboardKPIs>('/dashboard/summary');
- return res.data.patterns || res.data;
+ return res.data;
 };
 
 export const fetchDashboardTrends = async (): Promise<DashboardTrends> => {
  const res = await api.get<DashboardTrends>('/dashboard/trends');
- return res.data.patterns || res.data;
+ return res.data;
 };
 
 // ─── Search ───────────────────────────────────────────────────────────────────
@@ -152,7 +152,7 @@ export const semanticSearch = async (
  limit = 10
 ): Promise<SemanticSearchResult[]> => {
  const res = await api.post<SemanticSearchResult[]>('/search/semantic', { query, limit });
- return res.data.patterns || res.data;
+ return res.data;
 };
 
 export const keywordSearch = async (
@@ -160,19 +160,19 @@ export const keywordSearch = async (
  limit = 20
 ): Promise<IncidentSummary[]> => {
  const res = await api.get<IncidentSummary[]>(`/search/keyword?q=${encodeURIComponent(q)}&limit=${limit}`);
- return res.data.patterns || res.data;
+ return res.data;
 };
 
 // ─── Barriers & LSR ───────────────────────────────────────────────────────────
 
 export const fetchBarriers = async (): Promise<BarrierCatalog[]> => {
  const res = await api.get<BarrierCatalog[]>('/barriers');
- return res.data.patterns || res.data;
+ return res.data;
 };
 
 export const fetchLSRs = async (): Promise<LSRCatalog[]> => {
  const res = await api.get<LSRCatalog[]>('/life-saving-rules');
- return res.data.patterns || res.data;
+ return res.data;
 };
 
 // ─── Patterns ─────────────────────────────────────────────────────────────────
