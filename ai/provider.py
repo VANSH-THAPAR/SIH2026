@@ -9,25 +9,19 @@ class AIProvider:
     def __init__(self):
         self.provider = os.environ.get("AI_PROVIDER", "groq").lower()
         if self.provider == "gemini":
-            import google.generativeai as genai
+            from google import genai
             api_key = os.environ.get("GEMINI_API_KEY")
             if not api_key:
                 print("Warning: GEMINI_API_KEY not found in environment variables.")
-            genai.configure(api_key=api_key)
-            self.model = genai.GenerativeModel(
-                'gemini-1.5-flash',
-                generation_config=genai.GenerationConfig(
-                    response_mime_type="application/json"
-                )
-            )
-            self.model_name = "gemini-1.5-flash"
+            self.client = genai.Client(api_key=api_key)
+            self.model_name = "gemini-3.5-flash"
         elif self.provider == "groq":
             from groq import Groq
             api_key = os.environ.get("GROQ_API_KEY")
             if not api_key:
                 print("Warning: GROQ_API_KEY not found in environment variables.")
             self.client = Groq(api_key=api_key)
-            self.model_name = "openai/gpt-oss-120b"  # Most capable model available on this key
+            self.model_name = "openai/gpt-oss-120b"
         else:
             raise ValueError(f"Unsupported AI_PROVIDER: {self.provider}")
 
@@ -38,16 +32,18 @@ class AIProvider:
         """
         if self.provider == "gemini":
             try:
-                import google.generativeai as genai
-                model = genai.GenerativeModel(
-                    'gemini-1.5-flash',
-                    system_instruction=system_prompt,
-                    generation_config=genai.GenerationConfig(
+                from google import genai
+                from google.genai import types
+                
+                response = self.client.models.generate_content(
+                    model=self.model_name,
+                    contents=user_prompt,
+                    config=types.GenerateContentConfig(
+                        system_instruction=system_prompt,
                         response_mime_type="application/json",
-                        temperature=0.1
-                    )
+                        temperature=0.1,
+                    ),
                 )
-                response = model.generate_content(user_prompt)
                 return json.loads(response.text)
             except Exception as e:
                 print(f"Error calling Gemini API: {e}")
@@ -71,4 +67,3 @@ class AIProvider:
                 raise RuntimeError(f"Failed to generate JSON from Groq: {e}")
         else:
             raise NotImplementedError()
-

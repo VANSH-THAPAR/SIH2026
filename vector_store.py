@@ -14,6 +14,9 @@ from datetime import datetime
 load_dotenv()
 
 Base = declarative_base()
+
+class ReportRecord(Base):
+    __tablename__ = 'sif_reports'
     
     report_id = Column(String, primary_key=True)
     report_date = Column(String)
@@ -83,6 +86,56 @@ class ReportEmbedding(Base):
     embedding = Column(Vector(384))
     created_at = Column(DateTime, default=datetime.utcnow)
 
+class LifeSavingRule(Base):
+    __tablename__ = 'life_saving_rules'
+    
+    rule_id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    rule_code = Column(String, unique=True, nullable=False)
+    rule_name = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class ReportRule(Base):
+    __tablename__ = 'report_rules'
+    
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    report_id = Column(String, ForeignKey('sif_reports.report_id'), nullable=False)
+    rule_id = Column(String, ForeignKey('life_saving_rules.rule_id'), nullable=False)
+    confidence = Column(Float, nullable=False)
+    priority = Column(String, nullable=False) # PRIMARY or SECONDARY
+    trigger = Column(Text, nullable=True)
+    evidence = Column(JSON, nullable=True)
+    reasoning = Column(Text, nullable=True)
+    mapping_method = Column(String, nullable=False, default='LLM+VALIDATION')
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class Barrier(Base):
+    __tablename__ = 'barriers'
+    
+    barrier_id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    barrier_code = Column(String, unique=True, nullable=False)
+    barrier_name = Column(String, nullable=False)
+    barrier_type = Column(String, nullable=True)
+    description = Column(Text, nullable=True)
+    active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class ReportBarrier(Base):
+    __tablename__ = 'report_barriers'
+    
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    report_id = Column(String, ForeignKey('sif_reports.report_id'), nullable=False)
+    barrier_id = Column(String, ForeignKey('barriers.barrier_id'), nullable=False)
+    status = Column(String, nullable=False) # FAILED, MISSING, BYPASSED, WEAK, EFFECTIVE, NOT_DETERMINED, NOT_APPLICABLE
+    criticality = Column(Float, nullable=True)
+    confidence = Column(Float, nullable=False)
+    evidence = Column(JSON, nullable=True)
+    reasoning = Column(Text, nullable=True)
+    mapping_method = Column(String, nullable=False, default='LLM+VALIDATION')
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
 class PostgresManager:
     def __init__(self):
         # Load environment variables
@@ -107,8 +160,44 @@ class PostgresManager:
         # Create table if it doesn't exist
         Base.metadata.create_all(bind=self.engine)
         
+        # Seed LSR taxonomy
+        self.seed_life_saving_rules()
+        
+        # Seed Barrier taxonomy
+        self.seed_barriers()
+        
         print("Loading local SentenceTransformer model...")
         self.model = SentenceTransformer('all-MiniLM-L6-v2')
+
+    def seed_life_saving_rules(self):
+        db = self.SessionLocal()
+        try:
+            # Check if rules already exist
+            if db.query(LifeSavingRule).first():
+                return
+                
+            # Initial taxonomy
+            initial_rules = [
+                {"rule_code": "ENERGY_ISOLATION", "rule_name": "Energy Isolation", "description": "Verify isolation and zero energy before work begins"},
+                {"rule_code": "WORKING_AT_HEIGHT", "rule_name": "Working at Height", "description": "Protect yourself against a fall when working at height"},
+                {"rule_code": "CONFINED_SPACE", "rule_name": "Confined Space", "description": "Obtain authorization before entering a confined space"},
+                {"rule_code": "LINE_OF_FIRE", "rule_name": "Line of Fire", "description": "Keep yourself and others out of the line of fire"},
+                {"rule_code": "HOT_WORK", "rule_name": "Hot Work", "description": "Control flammables and ignition sources"},
+                {"rule_code": "LIFTING_OPERATIONS", "rule_name": "Lifting Operations", "description": "Plan lifting operations and control the area"},
+                {"rule_code": "DRIVING_VEHICLE_SAFETY", "rule_name": "Driving / Vehicle Safety", "description": "Follow safe driving rules"},
+                {"rule_code": "ELECTRICAL_SAFETY", "rule_name": "Electrical Safety", "description": "Protect against electrical hazards"},
+                {"rule_code": "HAZARDOUS_SUBSTANCES", "rule_name": "Hazardous Substances / Toxic Gas", "description": "Control exposure to hazardous substances"}
+            ]
+            
+            for rule in initial_rules:
+                db.add(LifeSavingRule(**rule))
+            db.commit()
+            print("Successfully seeded initial Life-Saving Rule taxonomy.")
+        except Exception as e:
+            db.rollback()
+            print(f"Error seeding life saving rules: {e}")
+        finally:
+            db.close()
 
     def upsert_report(self, report: ReportPayload) -> bool:
         db = self.SessionLocal()
@@ -273,5 +362,133 @@ class PostgresManager:
         except Exception as e:
             print(f"Error searching similar reports: {e}")
             return []
+        finally:
+            db.close()
+
+    def get_active_life_saving_rules(self) -> List[Dict[str, Any]]:
+        db = self.SessionLocal()
+        try:
+            rules = db.query(LifeSavingRule).filter(LifeSavingRule.active == True).all()
+            return [{"rule_id": r.rule_id, "rule_code": r.rule_code, "rule_name": r.rule_name, "description": r.description} for r in rules]
+        except Exception as e:
+            print(f"Error fetching LSR taxonomy: {e}")
+            return []
+        finally:
+            db.close()
+
+    def save_mapped_rules(self, report_id: str, mapped_rules: List[Dict[str, Any]]) -> bool:
+        db = self.SessionLocal()
+        try:
+            # Clear existing mapped rules for this report
+            db.query(ReportRule).filter(ReportRule.report_id == report_id).delete()
+            
+            for rule_data in mapped_rules:
+                rule = db.query(LifeSavingRule).filter(LifeSavingRule.rule_code == rule_data['rule_code']).first()
+                if not rule:
+                    continue # Should be validated before, but safety net
+                    
+                report_rule = ReportRule(
+                    report_id=report_id,
+                    rule_id=rule.rule_id,
+                    confidence=rule_data['confidence'],
+                    priority=rule_data['priority'],
+                    trigger=rule_data.get('trigger'),
+                    evidence=rule_data.get('evidence', []),
+                    reasoning=rule_data.get('reasoning')
+                )
+                db.add(report_rule)
+            
+            db.commit()
+            return True
+        except Exception as e:
+            db.rollback()
+            print(f"Error saving mapped rules for report {report_id}: {e}")
+            return False
+        finally:
+            db.close()
+
+    def seed_barriers(self):
+        db = self.SessionLocal()
+        try:
+            if db.query(Barrier).first():
+                return
+                
+            initial_barriers = [
+                {"barrier_code": "ENERGY_ISOLATION", "barrier_name": "Energy Isolation", "barrier_type": "HARDWARE"},
+                {"barrier_code": "DEPRESSURIZATION", "barrier_name": "Depressurization / Pressure Control", "barrier_type": "HARDWARE"},
+                {"barrier_code": "LOTO", "barrier_name": "Lockout / Tagout Verification", "barrier_type": "ADMINISTRATIVE"},
+                {"barrier_code": "PTW", "barrier_name": "Permit to Work", "barrier_type": "ADMINISTRATIVE"},
+                {"barrier_code": "GAS_TESTING", "barrier_name": "Gas Testing / Atmospheric Monitoring", "barrier_type": "DETECTION"},
+                {"barrier_code": "GUARDING", "barrier_name": "Guarding / Machine Protection", "barrier_type": "HARDWARE"},
+                {"barrier_code": "INTERLOCK", "barrier_name": "Interlock / Safety Instrumented Protection", "barrier_type": "HARDWARE"},
+                {"barrier_code": "FALL_PROTECTION", "barrier_name": "Fall Protection", "barrier_type": "HARDWARE"},
+                {"barrier_code": "SCAFFOLDING", "barrier_name": "Scaffolding / Edge Protection", "barrier_type": "HARDWARE"},
+                {"barrier_code": "LIFTING_PLAN", "barrier_name": "Lifting Plan / Load Control", "barrier_type": "ADMINISTRATIVE"},
+                {"barrier_code": "LIFTING_INSPECTION", "barrier_name": "Lifting Equipment Inspection", "barrier_type": "ADMINISTRATIVE"},
+                {"barrier_code": "EXCLUSION_ZONE", "barrier_name": "Exclusion Zone", "barrier_type": "ADMINISTRATIVE"},
+                {"barrier_code": "LINE_OF_FIRE", "barrier_name": "Line of Fire Control", "barrier_type": "ADMINISTRATIVE"},
+                {"barrier_code": "TRAFFIC_SEGREGATION", "barrier_name": "Traffic / Vehicle Segregation", "barrier_type": "HARDWARE"},
+                {"barrier_code": "ELECTRICAL_ISOLATION", "barrier_name": "Electrical Isolation", "barrier_type": "HARDWARE"},
+                {"barrier_code": "ELECTRICAL_PROTECTION", "barrier_name": "Electrical Protection", "barrier_type": "HARDWARE"},
+                {"barrier_code": "HOT_WORK", "barrier_name": "Hot Work Controls", "barrier_type": "ADMINISTRATIVE"},
+                {"barrier_code": "CONFINED_SPACE", "barrier_name": "Confined Space Controls", "barrier_type": "ADMINISTRATIVE"},
+                {"barrier_code": "CHEMICAL_CONTAINMENT", "barrier_name": "Chemical Containment", "barrier_type": "HARDWARE"},
+                {"barrier_code": "PPE", "barrier_name": "PPE", "barrier_type": "PPE"},
+                {"barrier_code": "ENGINEERING", "barrier_name": "Engineering Control", "barrier_type": "HARDWARE"},
+                {"barrier_code": "ADMINISTRATIVE", "barrier_name": "Administrative Control", "barrier_type": "ADMINISTRATIVE"},
+                {"barrier_code": "SUPERVISION", "barrier_name": "Supervision / Verification", "barrier_type": "ADMINISTRATIVE"},
+                {"barrier_code": "PROCEDURE", "barrier_name": "Procedure / Work Instruction", "barrier_type": "ADMINISTRATIVE"},
+                {"barrier_code": "COMPETENCY", "barrier_name": "Competency / Training", "barrier_type": "ADMINISTRATIVE"},
+                {"barrier_code": "EMERGENCY_RESPONSE", "barrier_name": "Emergency Response", "barrier_type": "EMERGENCY"}
+            ]
+            
+            for barrier in initial_barriers:
+                db.add(Barrier(**barrier))
+            db.commit()
+            print("Successfully seeded initial Barrier taxonomy.")
+        except Exception as e:
+            db.rollback()
+            print(f"Error seeding barriers: {e}")
+        finally:
+            db.close()
+
+    def get_active_barriers(self) -> List[Dict[str, Any]]:
+        db = self.SessionLocal()
+        try:
+            barriers = db.query(Barrier).filter(Barrier.active == True).all()
+            return [{"barrier_id": b.barrier_id, "barrier_code": b.barrier_code, "barrier_name": b.barrier_name, "barrier_type": b.barrier_type} for b in barriers]
+        except Exception as e:
+            print(f"Error fetching Barrier taxonomy: {e}")
+            return []
+        finally:
+            db.close()
+
+    def save_report_barriers(self, report_id: str, mapped_barriers: List[Dict[str, Any]]) -> bool:
+        db = self.SessionLocal()
+        try:
+            db.query(ReportBarrier).filter(ReportBarrier.report_id == report_id).delete()
+            
+            for barrier_data in mapped_barriers:
+                barrier = db.query(Barrier).filter(Barrier.barrier_code == barrier_data['barrier_code']).first()
+                if not barrier:
+                    continue
+                    
+                report_barrier = ReportBarrier(
+                    report_id=report_id,
+                    barrier_id=barrier.barrier_id,
+                    status=barrier_data['status'],
+                    criticality=barrier_data.get('criticality'),
+                    confidence=barrier_data['confidence'],
+                    evidence=barrier_data.get('evidence', []),
+                    reasoning=barrier_data.get('reasoning')
+                )
+                db.add(report_barrier)
+            
+            db.commit()
+            return True
+        except Exception as e:
+            db.rollback()
+            print(f"Error saving report barriers for report {report_id}: {e}")
+            return False
         finally:
             db.close()
