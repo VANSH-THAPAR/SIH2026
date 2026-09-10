@@ -473,9 +473,13 @@ def process_safety_intelligence(db: Session, report: SifReport) -> ReportAnalysi
 
     # Parse and save AI results
     # 1. Report Analysis
-    ra_data = ai_data.get("report_analysis", {}).get("schema", {})
-    if not ra_data:
-        ra_data = ai_data.get("report_analysis", {}) # sometimes models don't follow the nested structure
+    ra_node = ai_data.get("report_analysis", {})
+    if isinstance(ra_node, dict):
+        ra_data = ra_node.get("schema", {})
+        if not ra_data:
+            ra_data = ra_node
+    else:
+        ra_data = {}
     
     analysis = ReportAnalysis(
         analysis_id=str(uuid.uuid4()),
@@ -505,57 +509,82 @@ def process_safety_intelligence(db: Session, report: SifReport) -> ReportAnalysi
         escalation_evidence=float(ra_data.get("escalation_evidence", 0.0)),
         sif_mechanism_strength=float(ra_data.get("sif_mechanism_strength", 0.0)),
         exposure_status=ra_data.get("exposure_status"),
-        model_name="gemini-2.5-flash",
+        model_name="openai/gpt-oss-120b",
         analyzed_at=datetime.utcnow()
     )
+    # Fetch catalog mappings
     db.add(analysis)
+    rule_code_to_id = {r.rule_code: r.rule_id for r in db.query(LifeSavingRule).all()}
+    barrier_code_to_id = {b.barrier_code: b.barrier_id for b in db.query(Barrier).all()}
 
     # 2. Report Rules
-    rules_data = ai_data.get("report_rules", {}).get("schema", [])
+    rules_node = ai_data.get("report_rules", [])
+    if isinstance(rules_node, dict):
+        rules_data = rules_node.get("schema", [])
+    else:
+        rules_data = rules_node
     if not isinstance(rules_data, list):
-        rules_data = ai_data.get("report_rules", [])
+        rules_data = []
         
     for r in rules_data:
+        rule_code = r.get("rule_id", "")
+        actual_rule_id = rule_code_to_id.get(rule_code)
+        if not actual_rule_id:
+            continue
+            
         rr = ReportRule(
             id=str(uuid.uuid4()),
             report_id=report.report_id,
-            rule_id=r.get("rule_id", "UNKNOWN"),
+            rule_id=actual_rule_id,
             confidence=float(r.get("confidence", 0.0)),
             priority=r.get("priority", "SECONDARY"),
             trigger=r.get("trigger"),
             evidence=r.get("evidence", {}).get("extracted_text") if isinstance(r.get("evidence"), dict) else r.get("evidence"),
             reasoning=r.get("reasoning"),
-            mapping_method="gemini-2.5-flash",
+            mapping_method="openai/gpt-oss-120b",
             created_at=datetime.utcnow(),
         )
         # Verify if rule_id actually exists in LifeSavingRule catalog, else skip or link to generic
         db.add(rr)
 
     # 3. Report Barriers
-    barriers_data = ai_data.get("report_barriers", {}).get("schema", [])
+    barriers_node = ai_data.get("report_barriers", [])
+    if isinstance(barriers_node, dict):
+        barriers_data = barriers_node.get("schema", [])
+    else:
+        barriers_data = barriers_node
     if not isinstance(barriers_data, list):
-        barriers_data = ai_data.get("report_barriers", [])
+        barriers_data = []
         
     for b in barriers_data:
+        barrier_code = b.get("barrier_id", "")
+        actual_barrier_id = barrier_code_to_id.get(barrier_code)
+        if not actual_barrier_id:
+            continue
+            
         rb = ReportBarrier(
             id=str(uuid.uuid4()),
             report_id=report.report_id,
-            barrier_id=b.get("barrier_id", "UNKNOWN"),
+            barrier_id=actual_barrier_id,
             status=b.get("status", "UNKNOWN"),
             criticality=float(b.get("criticality", 0.0)),
             confidence=float(b.get("confidence", 0.0)),
             evidence=b.get("evidence", {}).get("extracted_text") if isinstance(b.get("evidence"), dict) else b.get("evidence"),
             reasoning=b.get("reasoning"),
-            mapping_method="gemini-2.5-flash",
+            mapping_method="openai/gpt-oss-120b",
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow()
         )
         db.add(rb)
 
     # 4. Incident Actions
-    actions_data = ai_data.get("incident_actions", {}).get("schema", [])
+    actions_node = ai_data.get("incident_actions", [])
+    if isinstance(actions_node, dict):
+        actions_data = actions_node.get("schema", [])
+    else:
+        actions_data = actions_node
     if not isinstance(actions_data, list):
-        actions_data = ai_data.get("incident_actions", [])
+        actions_data = []
         
     for act in actions_data:
         ia = IncidentAction(
@@ -663,7 +692,25 @@ def create_incident(db: Session, incident_in: IncidentCreate) -> IncidentSummary
     # Create / update meta
     meta = _get_or_create_meta(db, report_id, analysis.sif_score)
 
-    return _build_summary(report, analysis, meta)
+    # Get worst barrier status
+    barrier_rows = db.query(ReportBarrier.status).filter(ReportBarrier.report_id == report_id).all()
+    worst_barrier = None
+    priority_order = {"FAILED": 0, "BYPASSED": 1, "MISSING": 2, "DEGRADED": 3, "PARTIALLY_EFFECTIVE": 4, "EFFECTIVE": 5}
+    for (bstatus,) in barrier_rows:
+        if worst_barrier is None or priority_order.get(bstatus, 99) < priority_order.get(worst_barrier, 99):
+            worst_barrier = bstatus
+
+    # Get primary LSR
+    lsr_row = (
+        db.query(LifeSavingRule.rule_name)
+        .join(ReportRule, ReportRule.rule_id == LifeSavingRule.rule_id)
+        .filter(ReportRule.report_id == report_id)
+        .filter(ReportRule.priority == "PRIMARY")
+        .first()
+    )
+    primary_lsr = lsr_row[0] if lsr_row else None
+
+    return _build_summary(report, analysis, meta, barrier_status=worst_barrier, primary_lsr=primary_lsr)
 
 
 def get_actions(db: Session, report_id: Optional[str] = None) -> List[ActionSummary]:

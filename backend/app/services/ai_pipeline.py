@@ -1,21 +1,28 @@
 import os
 import json
 import logging
-import google.generativeai as genai
-from pydantic import BaseModel
+from groq import Groq
 
 logger = logging.getLogger(__name__)
 
 def run_gemini_analysis(report_data: dict) -> dict:
     """
-    Calls Gemini API with the SIF Sentinel prompt to analyze the incident report.
+    Calls Groq API with the SIF Sentinel prompt to analyze the incident report.
     Returns the structured JSON response perfectly matching the tables.
     """
-    api_key = os.getenv("GEMINI_API_KEY")
+    # Load .env file from the root if needed, but python-dotenv handles this in main.py usually
+    api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
-        raise ValueError("GEMINI_API_KEY is not set in environment variables")
+        from dotenv import load_dotenv
+        # Try to load from root directory
+        env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), ".env")
+        load_dotenv(env_path)
+        api_key = os.getenv("GROQ_API_KEY")
+
+    if not api_key:
+        raise ValueError("GROQ_API_KEY is not set in environment variables")
         
-    genai.configure(api_key=api_key)
+    client = Groq(api_key=api_key)
     
     # Read prompt.txt
     prompt_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), "prompt.txt")
@@ -24,7 +31,7 @@ def run_gemini_analysis(report_data: dict) -> dict:
             system_prompt = f.read()
     except Exception as e:
         logger.error(f"Failed to read prompt.txt: {e}")
-        system_prompt = "You are an AI safety intelligence pipeline. Analyze the incident and output JSON."
+        system_prompt = "You are an AI safety intelligence pipeline. Analyze the incident and output ONLY JSON without any markdown."
 
     # Prepare the input
     user_message = f"""
@@ -43,24 +50,27 @@ def run_gemini_analysis(report_data: dict) -> dict:
     Source: {report_data.get('source', '')}
     """
 
-    generation_config = {
-        "temperature": 0.2,
-        "top_p": 0.95,
-        "top_k": 40,
-        "max_output_tokens": 8192,
-        "response_mime_type": "application/json",
-    }
-    
-    model = genai.GenerativeModel(
-        model_name="gemini-2.5-flash",
-        generation_config=generation_config,
-        system_instruction=system_prompt,
-    )
-    
     try:
-        response = model.generate_content(user_message)
-        text = response.text
-        # Clean up in case the model ignored response_mime_type and added markdown
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {
+                    "role": "system",
+                    "content": system_prompt,
+                },
+                {
+                    "role": "user",
+                    "content": user_message,
+                }
+            ],
+            model="openai/gpt-oss-120b",
+            temperature=0.2,
+            response_format={"type": "json_object"}
+        )
+        
+        text = chat_completion.choices[0].message.content
+        
+        # Clean up in case the model ignored json format and added markdown
+        text = text.strip()
         if text.startswith("```json"):
             text = text[7:]
         if text.endswith("```"):
@@ -69,5 +79,5 @@ def run_gemini_analysis(report_data: dict) -> dict:
         data = json.loads(text)
         return data
     except Exception as e:
-        logger.error(f"Gemini API error or JSON parse error: {e}")
+        logger.error(f"Groq API error or JSON parse error: {e}")
         return None
