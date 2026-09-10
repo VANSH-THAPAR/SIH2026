@@ -6,6 +6,27 @@ from vector_store import PostgresManager, ReportRecord, ReportAnalysis
 from ai.analyzer import SafetyAnalyzer
 from ai.sif.service import SIFService
 
+def run_with_backoff(func, *args, max_retries=10):
+    delay = 15
+    for attempt in range(max_retries):
+        try:
+            result = func(*args)
+            
+            # Check if successful
+            if result is not None:
+                if isinstance(result, tuple) and result[0] is None:
+                    pass # tuple with None is a failure for analyzer
+                else:
+                    return result
+                    
+        except Exception as e:
+            print(f"Exception calling AI: {e}")
+            
+        print(f"Call failed or returned None. Retrying in {delay}s... (Attempt {attempt+1}/{max_retries})")
+        time.sleep(delay)
+        delay *= 2
+    return None
+
 def main():
     print("Initializing Postgres Manager...")
     vector_store = PostgresManager()
@@ -35,8 +56,8 @@ def main():
             return
             
         # 2. Batch processing settings
-        BATCH_SIZE = 5
-        SLEEP_BETWEEN_BATCHES = 10  # Seconds to sleep to avoid Groq rate limits
+        BATCH_SIZE = 1 # Lowered to 1 due to strict 6000 TPM rate limit
+        SLEEP_BETWEEN_BATCHES = 45  # Sleep 45 seconds to stay under 6000 TPM (2 calls * ~2000-3000 tokens)
         
         success_count = 0
         fail_count = 0
@@ -64,15 +85,16 @@ def main():
                     source=record.source or "Unknown"
                 )
                 
-                analysis, model_name = analyzer.analyze(report_payload)
+                analysis_res = run_with_backoff(analyzer.analyze, report_payload)
                 
-                if analysis:
+                if analysis_res:
+                    analysis, model_name = analysis_res
                     # Save analysis
                     vector_store.save_analysis(record.report_id, analysis.dict(), model_name)
                     
                     # Run SIF Analysis
-                    sif_result = sif_service.evaluate(report_payload, analysis)
-                    if sif_result:
+                    sif_result = run_with_backoff(sif_service.evaluate, report_payload, analysis)
+                     if sif_result:
                         vector_store.save_sif_analysis(record.report_id, sif_result.dict())
                     
                     # Create enriched text and save embedding

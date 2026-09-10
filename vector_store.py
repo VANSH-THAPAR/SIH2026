@@ -14,6 +14,8 @@ from datetime import datetime
 load_dotenv()
 
 Base = declarative_base()
+class ReportRecord(Base):
+    __tablename__ = 'sif_reports'
     
     report_id = Column(String, primary_key=True)
     report_date = Column(String)
