@@ -25,21 +25,26 @@ from app.services.safety_engine import (
 )
 
 
+from sqlalchemy.exc import IntegrityError
+
 def _get_or_create_meta(db: Session, report_id: str, sif_score: Optional[float] = None) -> IncidentMeta:
-    """Get or create incident metadata for a report."""
     meta = db.query(IncidentMeta).filter(IncidentMeta.report_id == report_id).first()
     if not meta:
-        priority = calculate_priority(sif_score)
-        meta = IncidentMeta(
-            report_id=report_id,
-            priority=priority,
-            status="OPEN",
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
-        )
-        db.add(meta)
-        db.commit()
-        db.refresh(meta)
+        try:
+            priority = calculate_priority(sif_score)
+            meta = IncidentMeta(
+                report_id=report_id,
+                priority=priority,
+                status='OPEN',
+                created_at=datetime.utcnow(),
+                updated_at=datetime.utcnow(),
+            )
+            db.add(meta)
+            db.commit()
+            db.refresh(meta)
+        except IntegrityError:
+            db.rollback()
+            meta = db.query(IncidentMeta).filter(IncidentMeta.report_id == report_id).first()
     return meta
 
 
@@ -137,7 +142,7 @@ def get_incidents(
         query = query.filter(ReportAnalysis.sif_score <= sif_max)
 
     # Order by SIF score descending
-    query = query.order_by(ReportAnalysis.sif_score.desc().nullslast())
+    query = query.order_by(SifReport.report_id.desc())
 
     total = query.count()
 
@@ -180,10 +185,7 @@ def get_incidents(
     summaries = []
     for report, analysis in rows:
         meta = metas.get(report.report_id)
-        if not meta:
-            # Auto-create meta
-            sif_score = analysis.sif_score if analysis else None
-            meta = _get_or_create_meta(db, report.report_id, sif_score)
+        
         summary = _build_summary(
             report, analysis, meta,
             barrier_status=worst_barrier.get(report.report_id),
@@ -197,7 +199,7 @@ def get_incidents(
         summaries.append(summary)
 
     return {
-        "incidents": summaries,
+        "items": summaries,
         "total": total,
         "page": page,
         "page_size": page_size,

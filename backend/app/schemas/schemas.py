@@ -168,7 +168,7 @@ class IncidentDetail(BaseModel):
 # =====================================================
 
 class IncidentListResponse(BaseModel):
-    incidents: List[IncidentSummary]
+    items: List[IncidentSummary]
     total: int
     page: int
     page_size: int

@@ -1,5 +1,16 @@
 @import "tailwindcss";
 
+@theme {
+  --color-ink: #111111;
+  --color-canvas: #FFFFFF;
+  --color-soft-cloud: #F5F5F5;
+  --color-hairline: #E5E5E5;
+  --color-mute: #707070;
+  --color-sale: #9E3500;
+
+  --font-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
 @layer base {
   * {
     box-sizing: border-box;
@@ -12,17 +23,9 @@
     margin: 0;
     padding: 0;
     width: 100%;
-    text-align: left;
-    border: none;
-    max-width: 100%;
-  }
-
-  body {
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    font-size: 13px;
-    line-height: 1.5;
-    color: #1a1a2e;
-    background: #f8f9fa;
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
   }
 
@@ -33,12 +36,46 @@
 
   h1, h2, h3, h4, h5, h6 {
     margin: 0;
-    font-weight: 600;
-    color: #1a1a2e;
+    font-weight: 500;
+    color: var(--color-ink);
+  }
+
+  a {
+    color: var(--color-ink);
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
   }
 
   p {
     margin: 0;
+  }
+}
+
+/* Custom Component Classes mapped to Nike */
+@layer components {
+  .btn-primary {
+    @apply bg-ink text-canvas rounded-full px-8 h-12 flex items-center justify-center font-medium transition-transform active:scale-95 hover:opacity-90;
+  }
+  .btn-secondary {
+    @apply bg-soft-cloud text-ink rounded-full px-8 h-12 flex items-center justify-center font-medium transition-transform active:scale-95 hover:bg-hairline;
+  }
+  .btn-icon {
+    @apply bg-soft-cloud text-ink rounded-full w-10 h-10 flex items-center justify-center transition-transform active:scale-95 hover:bg-hairline;
+  }
+  .nike-card {
+    @apply bg-canvas border border-hairline rounded-none p-6;
+  }
+  .nike-input {
+    @apply bg-soft-cloud text-ink rounded-full px-6 h-12 border-none outline-none focus:ring-1 focus:ring-ink w-full;
+  }
+  .nike-tab {
+    @apply text-mute hover:text-ink pb-2 border-b-2 border-transparent font-medium whitespace-nowrap transition-colors;
+  }
+  .nike-tab-active {
+    @apply text-ink border-ink font-medium pb-2 border-b-2 whitespace-nowrap;
   }
 }
 
@@ -48,17 +85,17 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: var(--color-canvas);
 }
 ::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
+  background: var(--color-hairline);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #a1a1a1;
+  background: var(--color-mute);
 }
 
-/* ReactFlow styles */
 .react-flow__node {
   font-size: 12px;
+  border-radius: 0 !important;
 }
