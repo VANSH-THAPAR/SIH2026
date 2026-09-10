@@ -27,7 +27,7 @@ class AIProvider:
             if not api_key:
                 print("Warning: GROQ_API_KEY not found in environment variables.")
             self.client = Groq(api_key=api_key)
-            self.model_name = "openai/gpt-oss-120b"
+            self.model_name = "openai/gpt-oss-120b"  # Most capable model available on this key
         else:
             raise ValueError(f"Unsupported AI_PROVIDER: {self.provider}")
 
