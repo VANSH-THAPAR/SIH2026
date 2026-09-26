@@ -2,6 +2,23 @@ from datetime import datetime
 from typing import Optional, List, Any, Dict
 from pydantic import BaseModel
 
+class UserCreate(BaseModel):
+    email: str
+    password: str
+    role: str
+
+class UserResponse(BaseModel):
+    id: str
+    email: str
+    role: str
+
+    model_config = {"from_attributes": True}
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
 
 # =====================================================
 # CORE INCIDENT SCHEMAS

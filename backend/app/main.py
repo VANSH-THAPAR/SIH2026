@@ -16,10 +16,10 @@ from sqlalchemy import text
 
 from app.core.config import APP_NAME, APP_VERSION, ALLOWED_ORIGINS, DEBUG
 from app.db.database import engine, Base
-from app.api import incidents, actions, dashboard, search, controls
+from app.api import incidents, actions, dashboard, search, controls, auth
 from app.models.models import (
     IncidentMeta, IncidentAction, IncidentComment,
-    ActivityLog, InterventionOutcome
+    ActivityLog, InterventionOutcome, User
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -41,6 +41,7 @@ async def lifespan(app: FastAPI):
                 IncidentComment.__table__,
                 ActivityLog.__table__,
                 InterventionOutcome.__table__,
+                User.__table__,
             ]
         )
         logger.info("Additive application tables ready")
@@ -84,6 +85,7 @@ app.include_router(actions.router)
 app.include_router(dashboard.router)
 app.include_router(search.router)
 app.include_router(controls.router)
+app.include_router(auth.router)
 
 
 @app.get("/api/health")

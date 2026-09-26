@@ -1,6 +1,8 @@
 from sqlalchemy import Column, String, Text, Float, Boolean, DateTime, JSON, ForeignKey
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
+import uuid
+from datetime import datetime as dt
 from app.db.database import Base
 
 
@@ -200,3 +202,14 @@ class InterventionOutcome(Base):
     reviewer = Column(String)
     notes = Column(Text)
     created_at = Column(DateTime)
+
+class User(Base):
+    """Application user for authentication."""
+    __tablename__ = "users"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    email = Column(String, unique=True, index=True)
+    hashed_password = Column(String)
+    role = Column(String)  # 'hse' or 'reporter'
+    created_at = Column(DateTime, default=dt.utcnow)
+

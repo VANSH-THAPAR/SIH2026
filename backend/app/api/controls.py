@@ -7,8 +7,9 @@ from app.db.database import get_db
 from app.models.models import Barrier, LifeSavingRule, ReportBarrier, ReportRule
 from app.schemas.schemas import BarrierCatalog, LSRCatalog
 from app.services.pattern_service import get_patterns
+from app.core.security import get_current_hse_user
 
-router = APIRouter(tags=["controls"])
+router = APIRouter(tags=["controls"], dependencies=[Depends(get_current_hse_user)])
 
 
 @router.get("/api/barriers", response_model=list[BarrierCatalog])

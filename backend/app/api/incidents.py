@@ -10,6 +10,8 @@ from app.schemas.schemas import (
 )
 from app.services import incident_service
 from app.services.search_service import get_similar_incidents
+from app.models.models import User
+from app.core.security import get_current_hse_user, get_current_reporter_user
 
 router = APIRouter(prefix="/api/incidents", tags=["incidents"])
 
@@ -28,6 +30,7 @@ def list_incidents(
     sif_min: Optional[float] = Query(None),
     sif_max: Optional[float] = Query(None),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_hse_user)
 ):
     """List incidents with filtering and pagination."""
     result = incident_service.get_incidents(
@@ -52,13 +55,14 @@ def list_incidents(
 def create_incident(
     incident: IncidentCreate,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_reporter_user)
 ):
     """Create or ingest a new incident report."""
     return incident_service.create_incident(db, incident)
 
 
 @router.get("/{report_id}", response_model=IncidentDetail)
-def get_incident(report_id: str, db: Session = Depends(get_db)):
+def get_incident(report_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_hse_user)):
     """Get full incident detail."""
     incident = incident_service.get_incident_detail(db, report_id)
     if not incident:
@@ -74,6 +78,7 @@ def update_incident(
     report_id: str,
     update: IncidentUpdate,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_hse_user)
 ):
     """Update incident priority/status/assignment (additive metadata only)."""
     result = incident_service.update_incident(db, report_id, update)
@@ -83,7 +88,7 @@ def update_incident(
 
 
 @router.get("/{report_id}/actions", response_model=list[ActionSummary])
-def get_incident_actions(report_id: str, db: Session = Depends(get_db)):
+def get_incident_actions(report_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_hse_user)):
     """Get actions for an incident."""
     return incident_service.get_actions(db, report_id=report_id)
 
@@ -93,6 +98,7 @@ def create_incident_action(
     report_id: str,
     action: ActionCreate,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_hse_user)
 ):
     """Create a new action for an incident."""
     action.report_id = report_id
@@ -104,24 +110,25 @@ def add_comment(
     report_id: str,
     comment: CommentCreate,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_hse_user)
 ):
     """Add a comment to an incident."""
     return incident_service.add_comment(db, report_id, comment)
 
 
 @router.get("/{report_id}/comments", response_model=list[CommentResponse])
-def get_comments(report_id: str, db: Session = Depends(get_db)):
+def get_comments(report_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_hse_user)):
     """Get comments for an incident."""
     return incident_service.get_comments(db, report_id)
 
 
 @router.get("/{report_id}/activity", response_model=list[ActivityEntry])
-def get_activity(report_id: str, db: Session = Depends(get_db)):
+def get_activity(report_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_hse_user)):
     """Get activity timeline for an incident."""
     return incident_service.get_activity_log(db, report_id)
 
 
 @router.get("/{report_id}/similar")
-def get_similar(report_id: str, limit: int = Query(5, ge=1, le=20), db: Session = Depends(get_db)):
+def get_similar(report_id: str, limit: int = Query(5, ge=1, le=20), db: Session = Depends(get_db), current_user: User = Depends(get_current_hse_user)):
     """Get similar incidents using semantic search."""
     return get_similar_incidents(db, report_id, limit=limit)

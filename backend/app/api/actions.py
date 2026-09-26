@@ -10,8 +10,9 @@ from app.services import incident_service
 from app.models.models import InterventionOutcome
 from datetime import datetime
 import uuid
+from app.core.security import get_current_hse_user
 
-router = APIRouter(prefix="/api/actions", tags=["actions"])
+router = APIRouter(prefix="/api/actions", tags=["actions"], dependencies=[Depends(get_current_hse_user)])
 
 
 @router.get("", response_model=list[ActionSummary])

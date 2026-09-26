@@ -5,8 +5,9 @@ from typing import Optional
 from app.db.database import get_db
 from app.schemas.schemas import SearchQuery, SearchResponse
 from app.services.search_service import semantic_search, keyword_search
+from app.core.security import get_current_hse_user
 
-router = APIRouter(prefix="/api/search", tags=["search"])
+router = APIRouter(prefix="/api/search", tags=["search"], dependencies=[Depends(get_current_hse_user)])
 
 
 @router.post("/semantic", response_model=SearchResponse)
