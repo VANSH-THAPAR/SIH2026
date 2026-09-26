@@ -49,6 +49,71 @@ export function CommandCenter() {
     refetchInterval: 60000,
   });
 
+  const trends = trendQuery.data;
+
+  // Category distribution data (Donut / Polar chart with pastel slices)
+  const categoryPalette = ['#3B82F6', '#8B5CF6', '#F97316', '#06B6D4', '#EC4899'];
+  const categoryData = useMemo(() => {
+    if (trends?.activity_hotspots && trends.activity_hotspots.length > 0) {
+      const top4 = trends.activity_hotspots.slice(0, 4);
+      const otherTotal = trends.activity_hotspots
+        .slice(4)
+        .reduce((acc, curr) => acc + (curr.total ?? curr.count ?? 0), 0);
+      const totalAll =
+        trends.activity_hotspots.reduce((acc, curr) => acc + (curr.total ?? curr.count ?? 0), 0) || 1;
+
+      const items = top4.map((h, i) => {
+        const val = h.total ?? h.count ?? 0;
+        return {
+          name: h.activity,
+          value: val,
+          percentage: Math.round((val / totalAll) * 100),
+          color: categoryPalette[i % categoryPalette.length],
+        };
+      });
+
+      if (otherTotal > 0) {
+        items.push({
+          name: 'Others',
+          value: otherTotal,
+          percentage: Math.max(1, 100 - items.reduce((acc, it) => acc + it.percentage, 0)),
+          color: categoryPalette[4],
+        });
+      }
+      return items;
+    }
+
+    return [
+      { name: 'Pipeline Maintenance', value: 136, percentage: 40, color: '#3B82F6' },
+      { name: 'Lifting Operations', value: 81, percentage: 24, color: '#8B5CF6' },
+      { name: 'General Operations', value: 73, percentage: 18, color: '#F97316' },
+      { name: 'Hot Work', value: 30, percentage: 10, color: '#06B6D4' },
+      { name: 'Others', value: 27, percentage: 8, color: '#EC4899' },
+    ];
+  }, [trends]);
+
+  // Top facilities / sites (Styled like "Top Spending merchants" in screenshot)
+  const facilityProgressColors = ['#10B981', '#F97316', '#8B5CF6', '#3B82F6'];
+  const topFacilities = useMemo(() => {
+    if (trends?.facility_risk && trends.facility_risk.length > 0) {
+      const maxVal = Math.max(...trends.facility_risk.slice(0, 4).map((f) => f.total)) || 1;
+      return trends.facility_risk.slice(0, 4).map((f, i) => ({
+        id: f.site_name,
+        name: f.site_name,
+        count: f.total,
+        percentage: Math.round((f.total / maxVal) * 100),
+        color: facilityProgressColors[i % facilityProgressColors.length],
+        initials: f.site_name.slice(0, 2).toUpperCase(),
+      }));
+    }
+    return [
+      { id: '1', name: 'Duliajan Central Field', count: 82, percentage: 80, color: '#10B981', initials: 'DU' },
+      { id: '2', name: 'Baghewala Exploration', count: 44, percentage: 70, color: '#F97316', initials: 'BA' },
+      { id: '3', name: 'Kakinada Deepwater', count: 41, percentage: 60, color: '#8B5CF6', initials: 'KA' },
+      { id: '4', name: 'Tengakhat Production', count: 38, percentage: 52, color: '#3B82F6', initials: 'TE' },
+    ];
+  }, [trends]);
+
   // Export report to CSV
   const handleExportReport = () => {
     if (!kpiQuery.data) return;
@@ -81,7 +146,6 @@ export function CommandCenter() {
   if (kpiQuery.isError) return <ErrorState onRetry={() => kpiQuery.refetch()} />;
 
   const kpi = kpiQuery.data!;
-  const trends = trendQuery.data;
 
   // Metric cards definitions mirroring the screenshot
   const kpiCards = [
@@ -169,68 +233,6 @@ export function CommandCenter() {
     { month: 'Dec', total: 60, sif: 50, volume: 31 },
   ];
 
-  // Category distribution data (Donut / Polar chart with pastel slices)
-  const categoryPalette = ['#3B82F6', '#8B5CF6', '#F97316', '#06B6D4', '#EC4899'];
-  const categoryData = useMemo(() => {
-    if (trends?.activity_hotspots && trends.activity_hotspots.length > 0) {
-      const top4 = trends.activity_hotspots.slice(0, 4);
-      const otherTotal = trends.activity_hotspots
-        .slice(4)
-        .reduce((acc, curr) => acc + (curr.total ?? curr.count ?? 0), 0);
-      const totalAll =
-        trends.activity_hotspots.reduce((acc, curr) => acc + (curr.total ?? curr.count ?? 0), 0) || 1;
-
-      const items = top4.map((h, i) => {
-        const val = h.total ?? h.count ?? 0;
-        return {
-          name: h.activity,
-          value: val,
-          percentage: Math.round((val / totalAll) * 100),
-          color: categoryPalette[i % categoryPalette.length],
-        };
-      });
-
-      if (otherTotal > 0) {
-        items.push({
-          name: 'Others',
-          value: otherTotal,
-          percentage: Math.max(1, 100 - items.reduce((acc, it) => acc + it.percentage, 0)),
-          color: categoryPalette[4],
-        });
-      }
-      return items;
-    }
-
-    return [
-      { name: 'Pipeline Maintenance', value: 136, percentage: 40, color: '#3B82F6' },
-      { name: 'Lifting Operations', value: 81, percentage: 24, color: '#8B5CF6' },
-      { name: 'General Operations', value: 73, percentage: 18, color: '#F97316' },
-      { name: 'Hot Work', value: 30, percentage: 10, color: '#06B6D4' },
-      { name: 'Others', value: 27, percentage: 8, color: '#EC4899' },
-    ];
-  }, [trends]);
-
-  // Top facilities / sites (Styled like "Top Spending merchants" in screenshot)
-  const facilityProgressColors = ['#10B981', '#F97316', '#8B5CF6', '#3B82F6'];
-  const topFacilities = useMemo(() => {
-    if (trends?.facility_risk && trends.facility_risk.length > 0) {
-      const maxVal = Math.max(...trends.facility_risk.slice(0, 4).map((f) => f.total)) || 1;
-      return trends.facility_risk.slice(0, 4).map((f, i) => ({
-        id: f.site_name,
-        name: f.site_name,
-        count: f.total,
-        percentage: Math.round((f.total / maxVal) * 100),
-        color: facilityProgressColors[i % facilityProgressColors.length],
-        initials: f.site_name.slice(0, 2).toUpperCase(),
-      }));
-    }
-    return [
-      { id: '1', name: 'Duliajan Central Field', count: 82, percentage: 80, color: '#10B981', initials: 'DU' },
-      { id: '2', name: 'Baghewala Exploration', count: 44, percentage: 70, color: '#F97316', initials: 'BA' },
-      { id: '3', name: 'Kakinada Deepwater', count: 41, percentage: 60, color: '#8B5CF6', initials: 'KA' },
-      { id: '4', name: 'Tengakhat Production', count: 38, percentage: 52, color: '#3B82F6', initials: 'TE' },
-    ];
-  }, [trends]);
 
   // Cash Flow / SIF Event Frequency Trend (Bottom right card with peaks)
   const frequencyTrendData = [
