@@ -436,8 +436,9 @@ def _generate_next_report_id(db: Session) -> str:
 
 
 def process_safety_intelligence(db: Session, report: SifReport) -> ReportAnalysis:
-    """Run safety NLP/intelligence rules via Gemini, map barriers & LSRs, and build vector embeddings."""
-    from app.services.ai_pipeline import run_gemini_analysis
+    """Run safety NLP/intelligence rules, map barriers & LSRs, and persist using UnifiedSafetyAnalyzer."""
+    from app.services.unified_pipeline import UnifiedSafetyAnalyzer
+    analyzer = UnifiedSafetyAnalyzer()
 
     report_dict = {
         "report_id": report.report_id,
@@ -453,11 +454,12 @@ def process_safety_intelligence(db: Session, report: SifReport) -> ReportAnalysi
         "source": report.source
     }
 
-    ai_data = run_gemini_analysis(report_dict)
-
-    if not ai_data:
-        # Fallback if AI fails: create minimal analysis record so UI doesn't break
-        logger.warning(f"AI analysis failed for {report.report_id}, using fallback.")
+    try:
+        analysis_result = analyzer.analyze(report_dict)
+        analyzer.persist_to_db(db, report_dict, analysis_result)
+        return db.query(ReportAnalysis).filter(ReportAnalysis.report_id == report.report_id).first()
+    except Exception as e:
+        logger.error(f"Unified analysis failed for {report.report_id}: {e}")
         analysis = ReportAnalysis(
             analysis_id=str(uuid.uuid4()),
             report_id=report.report_id,
@@ -470,164 +472,6 @@ def process_safety_intelligence(db: Session, report: SifReport) -> ReportAnalysi
         db.commit()
         db.refresh(analysis)
         return analysis
-
-    # Parse and save AI results
-    # 1. Report Analysis
-    ra_node = ai_data.get("report_analysis", {})
-    if isinstance(ra_node, dict):
-        ra_data = ra_node.get("schema", {})
-        if not ra_data:
-            ra_data = ra_node
-    else:
-        ra_data = {}
-    
-    analysis = ReportAnalysis(
-        analysis_id=str(uuid.uuid4()),
-        report_id=report.report_id,
-        unsafe_act=ra_data.get("unsafe_act"),
-        unsafe_condition=ra_data.get("unsafe_condition"),
-        hazard=ra_data.get("hazard"),
-        energy_source=ra_data.get("energy_source"),
-        worker_exposure=ra_data.get("worker_exposure"),
-        existing_controls=ra_data.get("existing_controls"),
-        missing_controls=ra_data.get("missing_controls"),
-        potential_consequence=ra_data.get("potential_consequence"),
-        actual_consequence=ra_data.get("actual_consequence"),
-        causal_chain=ra_data.get("causal_chain", []),
-        key_evidence=ra_data.get("key_evidence", []),
-        sif_potential=ra_data.get("sif_potential", False),
-        sif_score=float(ra_data.get("sif_score", 0.0)),
-        sif_classification=ra_data.get("sif_classification", "NON_SIF"),
-        hazard_severity_score=float(ra_data.get("hazard_severity_score", 0.0)),
-        energy_score=float(ra_data.get("energy_score", 0.0)),
-        exposure_score=float(ra_data.get("exposure_score", 0.0)),
-        consequence_score=float(ra_data.get("consequence_score", 0.0)),
-        barrier_failure_score=float(ra_data.get("barrier_failure_score", 0.0)),
-        sif_reasoning=ra_data.get("sif_reasoning"),
-        sif_pathway_credibility=float(ra_data.get("sif_pathway_credibility", 0.0)),
-        exposure_immediacy=float(ra_data.get("exposure_immediacy", 0.0)),
-        escalation_evidence=float(ra_data.get("escalation_evidence", 0.0)),
-        sif_mechanism_strength=float(ra_data.get("sif_mechanism_strength", 0.0)),
-        exposure_status=ra_data.get("exposure_status"),
-        model_name="openai/gpt-oss-120b",
-        analyzed_at=datetime.utcnow()
-    )
-    # Fetch catalog mappings
-    db.add(analysis)
-    rule_code_to_id = {r.rule_code: r.rule_id for r in db.query(LifeSavingRule).all()}
-    barrier_code_to_id = {b.barrier_code: b.barrier_id for b in db.query(Barrier).all()}
-
-    # 2. Report Rules
-    rules_node = ai_data.get("report_rules", [])
-    if isinstance(rules_node, dict):
-        rules_data = rules_node.get("schema", [])
-    else:
-        rules_data = rules_node
-    if not isinstance(rules_data, list):
-        rules_data = []
-        
-    for r in rules_data:
-        rule_code = r.get("rule_id", "")
-        actual_rule_id = rule_code_to_id.get(rule_code)
-        if not actual_rule_id:
-            continue
-            
-        rr = ReportRule(
-            id=str(uuid.uuid4()),
-            report_id=report.report_id,
-            rule_id=actual_rule_id,
-            confidence=float(r.get("confidence", 0.0)),
-            priority=r.get("priority", "SECONDARY"),
-            trigger=r.get("trigger"),
-            evidence=r.get("evidence", {}).get("extracted_text") if isinstance(r.get("evidence"), dict) else r.get("evidence"),
-            reasoning=r.get("reasoning"),
-            mapping_method="openai/gpt-oss-120b",
-            created_at=datetime.utcnow(),
-        )
-        # Verify if rule_id actually exists in LifeSavingRule catalog, else skip or link to generic
-        db.add(rr)
-
-    # 3. Report Barriers
-    barriers_node = ai_data.get("report_barriers", [])
-    if isinstance(barriers_node, dict):
-        barriers_data = barriers_node.get("schema", [])
-    else:
-        barriers_data = barriers_node
-    if not isinstance(barriers_data, list):
-        barriers_data = []
-        
-    for b in barriers_data:
-        barrier_code = b.get("barrier_id", "")
-        actual_barrier_id = barrier_code_to_id.get(barrier_code)
-        if not actual_barrier_id:
-            continue
-            
-        rb = ReportBarrier(
-            id=str(uuid.uuid4()),
-            report_id=report.report_id,
-            barrier_id=actual_barrier_id,
-            status=b.get("status", "UNKNOWN"),
-            criticality=float(b.get("criticality", 0.0)),
-            confidence=float(b.get("confidence", 0.0)),
-            evidence=b.get("evidence", {}).get("extracted_text") if isinstance(b.get("evidence"), dict) else b.get("evidence"),
-            reasoning=b.get("reasoning"),
-            mapping_method="openai/gpt-oss-120b",
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
-        )
-        db.add(rb)
-
-    # 4. Incident Actions
-    actions_node = ai_data.get("incident_actions", [])
-    if isinstance(actions_node, dict):
-        actions_data = actions_node.get("schema", [])
-    else:
-        actions_data = actions_node
-    if not isinstance(actions_data, list):
-        actions_data = []
-        
-    for act in actions_data:
-        ia = IncidentAction(
-            id=str(uuid.uuid4()),
-            report_id=report.report_id,
-            title=act.get("title", "Recommended Action"),
-            description=act.get("description", ""),
-            owner=act.get("owner", "UNASSIGNED"),
-            priority=act.get("priority", "IMMEDIATE"),
-            status=act.get("status", "TODO"),
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
-        )
-        db.add(ia)
-
-    # Note: IncidentMeta is handled via `_get_or_create_meta` and SifReport is already created
-    db.commit()
-    db.refresh(analysis)
-
-    # Vector embedding generation (if sentence-transformers is available)
-    try:
-        from sentence_transformers import SentenceTransformer
-        model = SentenceTransformer("all-MiniLM-L6-v2")
-        embed_text = f"{report.report_type} {report.activity or ''} {report.description} {analysis.hazard} {analysis.energy_source}"
-        vec = model.encode(embed_text, normalize_embeddings=True)
-        vec_str = "[" + ",".join(str(x) for x in vec.tolist()) + "]"
-        db.execute(text("""
-            INSERT INTO report_embeddings (report_id, embedding_text, embedding, created_at)
-            VALUES (:report_id, :text, CAST(:embedding AS vector), :created_at)
-            ON CONFLICT (report_id) DO UPDATE 
-            SET embedding_text = EXCLUDED.embedding_text, embedding = EXCLUDED.embedding
-        """), {
-            "report_id": report.report_id,
-            "text": embed_text,
-            "embedding": vec_str,
-            "created_at": datetime.utcnow()
-        })
-        db.commit()
-    except Exception as e:
-        db.rollback()
-        logger.warning(f"Vector embedding skipped for {report.report_id}: {e}")
-
-    return analysis
 
 
 def create_incident(db: Session, incident_in: IncidentCreate) -> IncidentSummary:
@@ -887,3 +731,4 @@ def log_activity(
     )
     db.add(entry)
     db.commit()
+

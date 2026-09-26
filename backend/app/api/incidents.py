@@ -57,8 +57,28 @@ def create_incident(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_reporter_user)
 ):
-    """Create or ingest a new incident report."""
+    """Create or ingest a new incident report using single-pass AI analysis."""
     return incident_service.create_incident(db, incident)
+
+
+@router.post("/analyze-unified")
+def analyze_unified_incident(
+    incident: IncidentCreate,
+    persist: bool = Query(True, description="Whether to persist results directly to NeonDB"),
+    db: Session = Depends(get_db),
+):
+    """
+    Runs Master Single-Pass AI Analysis for SIF Sentinel.
+    Extracts NLP, SIF, LSR, Barriers, and Actions in ONE single LLM call.
+    """
+    from app.services.unified_pipeline import UnifiedSafetyAnalyzer
+    analyzer = UnifiedSafetyAnalyzer()
+    report_dict = incident.model_dump()
+    result = analyzer.analyze(report_dict)
+    if persist:
+        saved_id = analyzer.persist_to_db(db, report_dict, result)
+        result["saved_report_id"] = saved_id
+    return result
 
 
 @router.get("/{report_id}", response_model=IncidentDetail)
