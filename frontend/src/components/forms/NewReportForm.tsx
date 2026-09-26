@@ -7,9 +7,10 @@ import { useUIStore } from '../../store/uiStore';
 
 interface NewReportFormProps {
   onClose: () => void;
+  isModal?: boolean;
 }
 
-export function NewReportForm({ onClose }: NewReportFormProps) {
+export function NewReportForm({ onClose, isModal = true }: NewReportFormProps) {
   const queryClient = useQueryClient();
   const addToast = useUIStore((state) => state.addToast);
 
@@ -80,22 +81,23 @@ export function NewReportForm({ onClose }: NewReportFormProps) {
     mutation.mutate(payload);
   };
 
-  return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex justify-center items-center backdrop-blur-sm p-4">
-      <div className="bg-canvas w-full max-w-2xl rounded-lg shadow-2xl flex flex-col max-h-[92vh] border border-hairline overflow-hidden">
+  const formContent = (
+    <div className={`bg-canvas w-full max-w-2xl flex flex-col ${isModal ? 'rounded-lg shadow-2xl max-h-[92vh] border border-hairline overflow-hidden' : 'h-full'}`}>
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-hairline bg-canvas">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
             <h2 className="text-lg font-bold text-ink">New Incident Report</h2>
           </div>
-          <button 
-            type="button" 
-            onClick={onClose} 
-            className="text-mute hover:text-ink p-1 rounded hover:bg-soft-cloud transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          {isModal && (
+            <button 
+              type="button" 
+              onClick={onClose} 
+              className="text-mute hover:text-ink p-1 rounded hover:bg-soft-cloud transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
         </div>
 
         {/* Scrollable Form Body */}
@@ -324,6 +326,14 @@ export function NewReportForm({ onClose }: NewReportFormProps) {
           </button>
         </div>
       </div>
+  );
+  if (!isModal) {
+    return formContent;
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/60 z-50 flex justify-center items-center backdrop-blur-sm p-4">
+      {formContent}
     </div>
   );
 }

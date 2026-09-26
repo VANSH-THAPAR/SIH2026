@@ -8,6 +8,16 @@ export type ExposureStatus = 'DOCUMENTED' | 'POTENTIAL' | 'NEAR_MISS' | 'ACTUAL'
 export type ActionStatus = 'TODO' | 'IN_PROGRESS' | 'VERIFICATION' | 'CLOSED';
 export type TrendDirection = 'UP' | 'DOWN' | 'STABLE';
 
+/**
+ * HSE Kanban workflow status — separate from incident risk level (Priority).
+ * null/undefined means the incident has NOT yet been moved to the Kanban board.
+ */
+export type KanbanWorkflowStatus =
+  | 'UNDER_ASSESSMENT'
+  | 'ACTION_IN_PROGRESS'
+  | 'PENDING_VERIFICATION'
+  | 'CLOSED';
+
 // ─── Incident Types ──────────────────────────────────────────────────────────
 
 export interface SiteInfo {
@@ -54,6 +64,8 @@ export interface IncidentSummary {
   sif_potential: boolean;
   priority: Priority;
   status: Status;
+  /** HSE Kanban workflow status. null = not yet moved to Kanban board. */
+  kanban_status?: KanbanWorkflowStatus | null;
   assigned_to: string;
   hazard: string;
   energy_source: string;
@@ -356,4 +368,30 @@ export interface ActionFilters {
   status?: ActionStatus | '';
   priority?: Priority | '';
   report_id?: string;
+}
+
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+
+export type UserRole = 'hse' | 'reporter';
+
+export interface User {
+  id: string;
+  email: string;
+  role: UserRole;
+}
+
+export interface AuthResponse {
+  access_token: string;
+  token_type: string;
+}
+
+export interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+export interface RegisterCredentials {
+  email: string;
+  password: string;
+  role: UserRole;
 }

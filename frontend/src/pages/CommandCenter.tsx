@@ -34,8 +34,6 @@ import { ErrorState } from '../components/ui/ErrorState';
 
 export function CommandCenter() {
   const navigate = useNavigate();
-  const [selectedTimeframe, setSelectedTimeframe] = useState('Last 30 days');
-  const [selectedRange, setSelectedRange] = useState('Apr 24, 2026 - May 28, 2026');
 
   const kpiQuery = useQuery({
     queryKey: ['dashboard', 'kpis'],
@@ -152,11 +150,8 @@ export function CommandCenter() {
     {
       id: 'total-reports',
       label: 'Total Incidents',
-      sublabel: 'Vs last 30 days',
       value: kpi.total_reports || 454,
       displayValue: (kpi.total_reports || 454).toLocaleString(),
-      change: '+4.27%',
-      isPositive: true,
       icon: Activity,
       iconBg: 'bg-blue-50 text-blue-600 border border-blue-100',
       link: '/incidents',
@@ -164,11 +159,8 @@ export function CommandCenter() {
     {
       id: 'sif-potential',
       label: 'SIF Precursors',
-      sublabel: 'Vs last 30 days',
       value: kpi.sif_potential_count || 373,
       displayValue: (kpi.sif_potential_count || 373).toLocaleString(),
-      change: '+2.89%',
-      isPositive: true,
       icon: AlertTriangle,
       iconBg: 'bg-emerald-50 text-emerald-600 border border-emerald-100',
       link: '/sif',
@@ -176,11 +168,8 @@ export function CommandCenter() {
     {
       id: 'critical-hazards',
       label: 'Critical Hazards',
-      sublabel: 'Vs last 30 days',
       value: kpi.critical_count || 289,
       displayValue: (kpi.critical_count || 289).toLocaleString(),
-      change: '-5.03%',
-      isPositive: false,
       icon: Zap,
       iconBg: 'bg-rose-50 text-rose-600 border border-rose-100',
       link: '/incidents?priority=CRITICAL',
@@ -188,7 +177,6 @@ export function CommandCenter() {
     {
       id: 'barrier-health',
       label: 'Barrier Integrity',
-      sublabel: 'Vs last 30 days',
       value: `${(
         ((kpi.total_barrier_mappings - kpi.failed_barriers) / (kpi.total_barrier_mappings || 1)) *
         100
@@ -197,8 +185,6 @@ export function CommandCenter() {
         ((kpi.total_barrier_mappings - kpi.failed_barriers) / (kpi.total_barrier_mappings || 1)) *
         100
       ).toFixed(1)}%`,
-      change: '+3.78%',
-      isPositive: true,
       icon: ShieldCheck,
       iconBg: 'bg-amber-50 text-amber-600 border border-amber-100',
       link: '/controls',
@@ -206,11 +192,8 @@ export function CommandCenter() {
     {
       id: 'safety-actions',
       label: 'Safety Actions',
-      sublabel: 'Vs last 30 days',
       value: kpi.open_actions || 56,
       displayValue: (kpi.open_actions || 56).toString(),
-      change: '+1.94%',
-      isPositive: true,
       icon: CheckSquare,
       iconBg: 'bg-purple-50 text-purple-600 border border-purple-100',
       link: '/actions',
@@ -307,16 +290,6 @@ export function CommandCenter() {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Date Picker Pill */}
-          <button
-            type="button"
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200/90 rounded-2xl text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50 hover:border-slate-300 transition-all cursor-pointer"
-          >
-            <Calendar className="w-3.5 h-3.5 text-slate-400" />
-            <span>{selectedRange}</span>
-            <ChevronDown className="w-3 h-3 text-slate-400 ml-1" />
-          </button>
-
           {/* Export Report Pill */}
           <button
             type="button"
@@ -351,7 +324,6 @@ export function CommandCenter() {
                     <h3 className="text-xs font-semibold text-slate-800 group-hover:text-blue-600 transition-colors">
                       {card.label}
                     </h3>
-                    <p className="text-[11px] text-slate-400">{card.sublabel}</p>
                   </div>
                 </div>
 
@@ -369,21 +341,6 @@ export function CommandCenter() {
                 <span className="text-2xl font-bold tracking-tight text-slate-900">
                   {card.displayValue}
                 </span>
-
-                <div
-                  className={`flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[11px] font-semibold ${
-                    card.isPositive
-                      ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-                      : 'bg-rose-50 text-rose-600 border border-rose-100'
-                  }`}
-                >
-                  {card.isPositive ? (
-                    <ArrowUpRight className="w-3 h-3" />
-                  ) : (
-                    <ArrowDownRight className="w-3 h-3" />
-                  )}
-                  <span>{card.change}</span>
-                </div>
               </div>
             </div>
           );
@@ -398,17 +355,6 @@ export function CommandCenter() {
             <div>
               <h2 className="text-base font-bold text-slate-900">Incident & Velocity Overview</h2>
               <p className="text-xs text-slate-400 mt-0.5">Dual-stream volume & SIF severity progression</p>
-            </div>
-
-            {/* Timeframe Dropdown Pill */}
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors"
-              >
-                <span>{selectedTimeframe}</span>
-                <ChevronDown className="w-3 h-3 text-slate-400" />
-              </button>
             </div>
           </div>
 
@@ -471,13 +417,6 @@ export function CommandCenter() {
         <div className="lg:col-span-4 bg-white border border-slate-200/70 rounded-2xl p-6 shadow-[0_2px_10px_-2px_rgba(0,0,0,0.03)] flex flex-col justify-between">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-bold text-slate-900">Incidents by Category</h2>
-            <button
-              type="button"
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors"
-            >
-              <span>{selectedTimeframe}</span>
-              <ChevronDown className="w-3 h-3 text-slate-400" />
-            </button>
           </div>
 
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 my-auto">
@@ -541,13 +480,6 @@ export function CommandCenter() {
         <div className="bg-white border border-slate-200/70 rounded-2xl p-6 shadow-[0_2px_10px_-2px_rgba(0,0,0,0.03)] flex flex-col justify-between">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-bold text-slate-900">Top High-Risk Facilities</h2>
-            <button
-              type="button"
-              className="flex items-center gap-1 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors"
-            >
-              <span>{selectedTimeframe}</span>
-              <ChevronDown className="w-3 h-3 text-slate-400" />
-            </button>
           </div>
 
           {/* Facility List with progress bars */}
@@ -588,13 +520,6 @@ export function CommandCenter() {
         <div className="bg-white border border-slate-200/70 rounded-2xl p-6 shadow-[0_2px_10px_-2px_rgba(0,0,0,0.03)] flex flex-col justify-between">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-base font-bold text-slate-900">Barrier Reliability Index</h2>
-            <button
-              type="button"
-              className="flex items-center gap-1 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors"
-            >
-              <span>{selectedTimeframe}</span>
-              <ChevronDown className="w-3 h-3 text-slate-400" />
-            </button>
           </div>
 
           {/* Radial Tick Arc SVG Gauge */}
@@ -667,13 +592,6 @@ export function CommandCenter() {
         <div className="bg-white border border-slate-200/70 rounded-2xl p-6 shadow-[0_2px_10px_-2px_rgba(0,0,0,0.03)] flex flex-col justify-between">
           <div className="flex items-center justify-between mb-1">
             <h2 className="text-base font-bold text-slate-900">SIF Event Frequency Trend</h2>
-            <button
-              type="button"
-              className="flex items-center gap-1 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors"
-            >
-              <span>{selectedTimeframe}</span>
-              <ChevronDown className="w-3 h-3 text-slate-400" />
-            </button>
           </div>
 
           <p className="text-xs text-slate-500 mb-2">

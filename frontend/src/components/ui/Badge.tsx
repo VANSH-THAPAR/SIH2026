@@ -1,5 +1,4 @@
 import clsx from 'clsx';
-import type { Priority, Status as IncidentStatus, ActionStatus, BarrierStatus } from '@/types';
 
 // =====================================================
 // Priority Badge
@@ -141,7 +140,7 @@ const EXPOSURE_STYLES: Record<string, string> = {
  NO_DOCUMENTED_EXPOSURE: 'bg-soft-cloud text-mute',
 };
 
-export function ExposureBadge({ status, size }: { status?: string, size?: any }) {
+export function ExposureBadge({ status }: { status?: string; size?: 'xs' | 'sm' | 'md' }) {
  if (!status) return null;
  const styles = EXPOSURE_STYLES[status] || 'bg-soft-cloud text-mute';
  const label = status.replace(/_/g, ' ').toLowerCase().replace(/^\w/, c => c.toUpperCase());
@@ -155,16 +154,77 @@ export function ExposureBadge({ status, size }: { status?: string, size?: any })
 // =====================================================
 // Trend Badge 
 // =====================================================
+interface TrendConfig { label: string; styles: string; }
 export function TrendBadge({ trend }: { trend: 'INCREASING' | 'STABLE' | 'DECREASING' | string }) {
- const config: Record<string, any> = {
+ const config: Record<string, TrendConfig> = {
  INCREASING: { label: '↑ Increasing', styles: 'bg-red-50 text-red-600' },
  STABLE: { label: '→ Stable', styles: 'bg-soft-cloud text-mute' },
  DECREASING: { label: '↓ Decreasing', styles: 'bg-green-50 text-green-600' },
  };
- const { label, styles } = config[trend] || config.STABLE;
+ const { label, styles } = config[trend] ?? config['STABLE'];
  return (
  <span className={clsx('inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium', styles)}>
  {label}
+ </span>
+ );
+}
+
+// =====================================================
+// Kanban Workflow Status Badge
+// Displays HSE workflow stage — SEPARATE from risk level/priority
+// =====================================================
+const KANBAN_STATUS_CONFIG: Record<string, { label: string; bg: string; text: string; dot: string }> = {
+ UNDER_ASSESSMENT: {
+   label: 'Under Assessment',
+   bg: 'bg-indigo-50',
+   text: 'text-indigo-700',
+   dot: 'bg-indigo-500',
+ },
+ ACTION_IN_PROGRESS: {
+   label: 'Action in Progress',
+   bg: 'bg-amber-50',
+   text: 'text-amber-700',
+   dot: 'bg-amber-500',
+ },
+ PENDING_VERIFICATION: {
+   label: 'Pending Verification',
+   bg: 'bg-purple-50',
+   text: 'text-purple-700',
+   dot: 'bg-purple-500',
+ },
+ CLOSED: {
+   label: 'Closed',
+   bg: 'bg-green-50',
+   text: 'text-green-700',
+   dot: 'bg-green-500',
+ },
+};
+
+interface KanbanStatusBadgeProps {
+ status: string;
+ size?: 'xs' | 'sm' | 'md';
+}
+
+export function KanbanStatusBadge({ status, size = 'sm' }: KanbanStatusBadgeProps) {
+ if (!status) return null;
+ const cfg = KANBAN_STATUS_CONFIG[status] || {
+   label: status.replace(/_/g, ' '),
+   bg: 'bg-soft-cloud',
+   text: 'text-mute',
+   dot: 'bg-gray-400',
+ };
+ return (
+ <span
+   className={clsx(
+     'inline-flex items-center gap-1 rounded border font-semibold',
+     size === 'xs' ? 'px-1.5 py-0.5 text-[10px]' : size === 'sm' ? 'px-1.5 py-0.5 text-xs' : 'px-2 py-1 text-sm',
+     cfg.bg,
+     cfg.text,
+     'border-transparent',
+   )}
+ >
+   <span className={clsx('w-1.5 h-1.5 rounded-full shrink-0', cfg.dot)} />
+   {cfg.label}
  </span>
  );
 }

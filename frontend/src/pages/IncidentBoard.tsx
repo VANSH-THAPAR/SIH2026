@@ -24,68 +24,90 @@ import {
   Search,
   X,
   Download,
-  PlusCircle,
-  Calendar,
   ChevronDown,
   ArrowUpRight,
+  GitBranch,
+  CheckCheck,
+  Loader2,
+  ClipboardList,
 } from 'lucide-react';
-import { fetchIncidents, updateIncident } from '../services/api';
-import type { IncidentSummary, Priority } from '../types';
-import { PriorityBadge, StatusBadge, ExposureBadge } from '../components/ui/Badge';
+import { fetchIncidents, moveToKanban, updateKanbanStatus } from '../services/api';
+import type { IncidentSummary, Priority, KanbanWorkflowStatus } from '../types';
+import { PriorityBadge, StatusBadge, ExposureBadge, KanbanStatusBadge } from '../components/ui/Badge';
 import { LoadingPage } from '../components/ui/LoadingSpinner';
 import { ErrorState } from '../components/ui/ErrorState';
 import { EmptyState } from '../components/ui/EmptyState';
+import { useUIStore } from '../store/uiStore';
 
-const PRIORITY_COLUMNS: Priority[] = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'];
+// ─── Workflow Column Config ─────────────────────────────────────────────────────
+// Columns represent HSE WORKFLOW STATUS, NOT risk level.
+// Risk level (Priority) is displayed as a badge INSIDE each card.
 
-const COLUMN_CONFIG: Record<Priority, {
+const WORKFLOW_COLUMNS: KanbanWorkflowStatus[] = [
+  'UNDER_ASSESSMENT',
+  'ACTION_IN_PROGRESS',
+  'PENDING_VERIFICATION',
+  'CLOSED',
+];
+
+const WORKFLOW_COLUMN_CONFIG: Record<KanbanWorkflowStatus, {
   label: string;
+  description: string;
   dotColor: string;
   headerBg: string;
   headerText: string;
   badge: string;
-  cardBorder: string;
-  colBg: string;
+  cardBorderColor: string;
+  emptyText: string;
+  icon: React.ElementType;
 }> = {
-  CRITICAL: {
-    label: 'Critical Risk',
-    dotColor: '#DC2626',
-    headerBg: '#FEF2F2',
-    headerText: '#991B1B',
-    badge: 'bg-red-600 text-white',
-    cardBorder: 'border-l-red-400',
-    colBg: '#FAFAFA',
+  UNDER_ASSESSMENT: {
+    label: 'Under Assessment',
+    description: 'HSE is investigating, evaluating risk and cause',
+    dotColor: '#4F46E5',
+    headerBg: '#EEF2FF',
+    headerText: '#3730A3',
+    badge: 'bg-indigo-600 text-white',
+    cardBorderColor: 'border-l-indigo-400',
+    emptyText: 'No incidents under assessment',
+    icon: ClipboardList,
   },
-  HIGH: {
-    label: 'High Risk',
-    dotColor: '#EA580C',
-    headerBg: '#FFF7ED',
-    headerText: '#9A3412',
-    badge: 'bg-orange-500 text-white',
-    cardBorder: 'border-l-orange-400',
-    colBg: '#FAFAFA',
-  },
-  MEDIUM: {
-    label: 'Medium Risk',
+  ACTION_IN_PROGRESS: {
+    label: 'Action in Progress',
+    description: 'Corrective actions identified and being implemented',
     dotColor: '#D97706',
     headerBg: '#FFFBEB',
     headerText: '#92400E',
     badge: 'bg-amber-500 text-white',
-    cardBorder: 'border-l-amber-400',
-    colBg: '#FAFAFA',
+    cardBorderColor: 'border-l-amber-400',
+    emptyText: 'No actions currently in progress',
+    icon: Loader2,
   },
-  LOW: {
-    label: 'Low / Monitored',
+  PENDING_VERIFICATION: {
+    label: 'Pending Verification',
+    description: 'Actions completed — HSE verifying effectiveness',
+    dotColor: '#7C3AED',
+    headerBg: '#F5F3FF',
+    headerText: '#5B21B6',
+    badge: 'bg-purple-600 text-white',
+    cardBorderColor: 'border-l-purple-400',
+    emptyText: 'No incidents pending verification',
+    icon: GitBranch,
+  },
+  CLOSED: {
+    label: 'Closed',
+    description: 'HSE verified and formally closed',
     dotColor: '#16A34A',
     headerBg: '#F0FDF4',
     headerText: '#14532D',
     badge: 'bg-green-600 text-white',
-    cardBorder: 'border-l-green-400',
-    colBg: '#FAFAFA',
+    cardBorderColor: 'border-l-green-400',
+    emptyText: 'No closed incidents',
+    icon: CheckCheck,
   },
 };
 
-// ─── Incident Card ─────────────────────────────────────────────────────────────
+// ─── Kanban Incident Card ───────────────────────────────────────────────────────
 
 interface IncidentCardProps {
   incident: IncidentSummary;
@@ -104,7 +126,7 @@ function IncidentCard({ incident, onClick }: IncidentCardProps) {
     opacity: isDragging ? 0.4 : 1,
   };
 
-  const cfg = COLUMN_CONFIG[incident.priority as Priority] ?? COLUMN_CONFIG.LOW;
+  const colCfg = WORKFLOW_COLUMN_CONFIG[incident.kanban_status as KanbanWorkflowStatus] ?? WORKFLOW_COLUMN_CONFIG.UNDER_ASSESSMENT;
 
   return (
     <div
@@ -113,9 +135,9 @@ function IncidentCard({ incident, onClick }: IncidentCardProps) {
       {...attributes}
       {...listeners}
       onClick={(e) => { e.stopPropagation(); onClick(incident.id); }}
-      className={`bg-white border border-slate-200/80 border-l-4 ${cfg.cardBorder} rounded-xl p-3.5 mb-2 cursor-pointer hover:shadow-[0_4px_12px_rgba(0,0,0,0.07)] hover:border-slate-300 transition-all select-none group`}
+      className={`bg-white border border-slate-200/80 border-l-4 ${colCfg.cardBorderColor} rounded-xl p-3.5 mb-2 cursor-pointer hover:shadow-[0_4px_12px_rgba(0,0,0,0.07)] hover:border-slate-300 transition-all select-none group`}
     >
-      {/* Top row: ID + priority badge */}
+      {/* Top row: ID + RISK badge (Priority = risk level) */}
       <div className="flex items-center justify-between mb-2">
         <span className="text-[10px] font-mono text-slate-400 font-medium">{incident.id}</span>
         <PriorityBadge priority={incident.priority} size="xs" />
@@ -126,7 +148,7 @@ function IncidentCard({ incident, onClick }: IncidentCardProps) {
         {incident.title}
       </div>
 
-      {/* Status pills */}
+      {/* Status pills row: incident status + SIF flag */}
       <div className="flex items-center gap-1.5 mb-2.5 flex-wrap">
         <StatusBadge status={incident.status} size="xs" />
         {incident.sif_potential && (
@@ -151,7 +173,7 @@ function IncidentCard({ incident, onClick }: IncidentCardProps) {
             <span className="truncate">{incident.hazard}</span>
           </div>
         )}
-        {/* SIF Score row */}
+        {/* SIF Score */}
         <div className="flex items-center justify-between mt-1.5">
           <span className="text-[10px] text-slate-400">{incident.primary_lsr || incident.barrier_status || ''}</span>
           {incident.sif_score != null && (
@@ -166,7 +188,7 @@ function IncidentCard({ incident, onClick }: IncidentCardProps) {
   );
 }
 
-// ─── Drag Overlay Card ─────────────────────────────────────────────────────────
+// ─── Drag Overlay Card ──────────────────────────────────────────────────────────
 
 function StaticIncidentCard({ incident }: { incident: IncidentSummary }) {
   return (
@@ -178,22 +200,27 @@ function StaticIncidentCard({ incident }: { incident: IncidentSummary }) {
       <div className="text-[12px] font-semibold text-slate-800 leading-snug line-clamp-2">
         {incident.title}
       </div>
+      {incident.kanban_status && (
+        <div className="mt-2">
+          <KanbanStatusBadge status={incident.kanban_status} size="xs" />
+        </div>
+      )}
     </div>
   );
 }
 
-// ─── Kanban Column ─────────────────────────────────────────────────────────────
+// ─── Kanban Column ──────────────────────────────────────────────────────────────
 
 interface KanbanColumnProps {
-  priority: Priority;
+  status: KanbanWorkflowStatus;
   incidents: IncidentSummary[];
   onClickIncident: (id: string) => void;
-  totalCount: number;
 }
 
-function KanbanColumn({ priority, incidents, onClickIncident, totalCount }: KanbanColumnProps) {
-  const { setNodeRef } = useDroppable({ id: priority });
-  const cfg = COLUMN_CONFIG[priority];
+function KanbanColumn({ status, incidents, onClickIncident }: KanbanColumnProps) {
+  const { setNodeRef } = useDroppable({ id: status });
+  const cfg = WORKFLOW_COLUMN_CONFIG[status];
+  const Icon = cfg.icon;
 
   return (
     <div
@@ -203,29 +230,35 @@ function KanbanColumn({ priority, incidents, onClickIncident, totalCount }: Kanb
     >
       {/* Column header */}
       <div
-        className="flex items-center justify-between px-4 py-3 border-b border-slate-100"
+        className="flex flex-col px-4 py-3 border-b border-slate-100"
         style={{ background: cfg.headerBg }}
       >
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: cfg.dotColor }} />
-          <span className="text-xs font-bold uppercase tracking-wider" style={{ color: cfg.headerText }}>
-            {cfg.label}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: cfg.dotColor }} />
+            <span className="text-xs font-bold uppercase tracking-wider" style={{ color: cfg.headerText }}>
+              {cfg.label}
+            </span>
+          </div>
+          <span className={`text-[11px] font-bold rounded-lg px-2.5 py-0.5 ${cfg.badge}`}>
+            {incidents.length}
           </span>
         </div>
-        <span className={`text-[11px] font-bold rounded-lg px-2.5 py-0.5 ${cfg.badge}`}>
-          {incidents.length}
-        </span>
+        <p className="text-[10px] mt-1 pl-4" style={{ color: cfg.headerText, opacity: 0.7 }}>
+          {cfg.description}
+        </p>
       </div>
 
       {/* Cards */}
       <SortableContext items={incidents.map((i) => i.id)} strategy={verticalListSortingStrategy}>
         <div
           className="flex-1 overflow-y-auto p-3"
-          style={{ maxHeight: 'calc(100vh - 260px)', minHeight: 120 }}
+          style={{ maxHeight: 'calc(100vh - 280px)', minHeight: 120 }}
         >
           {incidents.length === 0 ? (
-            <div className="text-[11px] text-slate-400 text-center py-8 bg-white/60 rounded-xl border border-dashed border-slate-200">
-              No incidents in this priority
+            <div className="text-[11px] text-slate-400 text-center py-8 bg-white/60 rounded-xl border border-dashed border-slate-200 flex flex-col items-center gap-2">
+              <Icon className="w-5 h-5 opacity-30" />
+              {cfg.emptyText}
             </div>
           ) : (
             incidents.map((inc) => (
@@ -238,23 +271,20 @@ function KanbanColumn({ priority, incidents, onClickIncident, totalCount }: Kanb
           )}
         </div>
       </SortableContext>
-
-      {/* Footer if more records */}
-      {totalCount > incidents.length && (
-        <div
-          className="px-4 py-2.5 border-t border-slate-100 text-[11px] font-medium text-slate-500 text-center cursor-pointer hover:text-blue-600 transition-colors"
-          style={{ background: cfg.headerBg }}
-        >
-          + {totalCount - incidents.length} more records in pipeline
-        </div>
-      )}
     </div>
   );
 }
 
-// ─── List View ─────────────────────────────────────────────────────────────────
+// ─── List View with "Move to Kanban" Action ─────────────────────────────────────
 
-function ListView({ incidents, onClickIncident }: { incidents: IncidentSummary[]; onClickIncident: (id: string) => void }) {
+interface ListViewProps {
+  incidents: IncidentSummary[];
+  onClickIncident: (id: string) => void;
+  onMoveToKanban: (incident: IncidentSummary) => void;
+  movingIds: Set<string>;
+}
+
+function ListView({ incidents, onClickIncident, onMoveToKanban, movingIds }: ListViewProps) {
   return (
     <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm">
       <table className="w-full text-xs">
@@ -262,41 +292,81 @@ function ListView({ incidents, onClickIncident }: { incidents: IncidentSummary[]
           <tr className="border-b border-slate-100 bg-slate-50">
             <th className="px-4 py-3 text-left font-semibold text-slate-500 text-[11px] uppercase tracking-wide">ID</th>
             <th className="px-4 py-3 text-left font-semibold text-slate-500 text-[11px] uppercase tracking-wide">Incident</th>
-            <th className="px-4 py-3 text-left font-semibold text-slate-500 text-[11px] uppercase tracking-wide">Priority</th>
+            <th className="px-4 py-3 text-left font-semibold text-slate-500 text-[11px] uppercase tracking-wide">Risk Level</th>
             <th className="px-4 py-3 text-left font-semibold text-slate-500 text-[11px] uppercase tracking-wide">Status</th>
+            <th className="px-4 py-3 text-left font-semibold text-slate-500 text-[11px] uppercase tracking-wide">Workflow</th>
             <th className="px-4 py-3 text-left font-semibold text-slate-500 text-[11px] uppercase tracking-wide">Site / Asset</th>
             <th className="px-4 py-3 text-left font-semibold text-slate-500 text-[11px] uppercase tracking-wide">Hazard</th>
             <th className="px-4 py-3 text-left font-semibold text-slate-500 text-[11px] uppercase tracking-wide">SIF Score</th>
             <th className="px-4 py-3 text-left font-semibold text-slate-500 text-[11px] uppercase tracking-wide">Exposure</th>
             <th className="px-4 py-3 text-left font-semibold text-slate-500 text-[11px] uppercase tracking-wide">Date</th>
+            <th className="px-4 py-3 text-left font-semibold text-slate-500 text-[11px] uppercase tracking-wide">Action</th>
           </tr>
         </thead>
         <tbody>
-          {incidents.map((inc, i) => (
-            <tr
-              key={inc.id}
-              className={`border-b border-slate-50 hover:bg-blue-50/50 cursor-pointer transition-colors last:border-0 ${i % 2 === 0 ? '' : 'bg-slate-50/30'}`}
-              onClick={() => onClickIncident(inc.id)}
-            >
-              <td className="px-4 py-3 font-mono text-[10px] text-slate-500">{inc.id}</td>
-              <td className="px-4 py-3 max-w-xs">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-semibold text-slate-800 truncate hover:text-blue-600 transition-colors">{inc.title}</span>
-                  {inc.sif_potential && (
-                    <span className="text-[9px] px-1.5 py-0.5 bg-rose-100 text-rose-600 rounded-lg font-bold shrink-0">SIF</span>
+          {incidents.map((inc, i) => {
+            const isOnKanban = !!inc.kanban_status;
+            const isMoving = movingIds.has(inc.id);
+
+            return (
+              <tr
+                key={inc.id}
+                className={`border-b border-slate-50 hover:bg-blue-50/50 cursor-pointer transition-colors last:border-0 ${i % 2 === 0 ? '' : 'bg-slate-50/30'}`}
+                onClick={() => onClickIncident(inc.id)}
+              >
+                <td className="px-4 py-3 font-mono text-[10px] text-slate-500">{inc.id}</td>
+                <td className="px-4 py-3 max-w-xs">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-semibold text-slate-800 truncate hover:text-blue-600 transition-colors">{inc.title}</span>
+                    {inc.sif_potential && (
+                      <span className="text-[9px] px-1.5 py-0.5 bg-rose-100 text-rose-600 rounded-lg font-bold shrink-0">SIF</span>
+                    )}
+                  </div>
+                  {inc.department && <div className="text-[10px] text-slate-400 mt-0.5">{inc.department}</div>}
+                </td>
+                <td className="px-4 py-3"><PriorityBadge priority={inc.priority} size="xs" /></td>
+                <td className="px-4 py-3"><StatusBadge status={inc.status} size="xs" /></td>
+                <td className="px-4 py-3">
+                  {isOnKanban ? (
+                    <KanbanStatusBadge status={inc.kanban_status!} size="xs" />
+                  ) : (
+                    <span className="text-[10px] text-slate-400 italic">Not on Kanban</span>
                   )}
-                </div>
-                {inc.department && <div className="text-[10px] text-slate-400 mt-0.5">{inc.department}</div>}
-              </td>
-              <td className="px-4 py-3"><PriorityBadge priority={inc.priority} size="xs" /></td>
-              <td className="px-4 py-3"><StatusBadge status={inc.status} size="xs" /></td>
-              <td className="px-4 py-3 text-slate-500 text-[11px]">{inc.site_name}</td>
-              <td className="px-4 py-3 text-slate-500 max-w-32 truncate text-[11px]">{inc.hazard}</td>
-              <td className="px-4 py-3 font-bold text-slate-800 text-[12px]">{inc.sif_score?.toFixed(1) ?? '—'}</td>
-              <td className="px-4 py-3"><ExposureBadge status={inc.exposure_status} size="xs" /></td>
-              <td className="px-4 py-3 text-slate-400 whitespace-nowrap text-[10px]">{inc.report_date?.slice(0, 10)}</td>
-            </tr>
-          ))}
+                </td>
+                <td className="px-4 py-3 text-slate-500 text-[11px]">{inc.site_name}</td>
+                <td className="px-4 py-3 text-slate-500 max-w-32 truncate text-[11px]">{inc.hazard}</td>
+                <td className="px-4 py-3 font-bold text-slate-800 text-[12px]">{inc.sif_score?.toFixed(1) ?? '—'}</td>
+                <td className="px-4 py-3"><ExposureBadge status={inc.exposure_status} size="xs" /></td>
+                <td className="px-4 py-3 text-slate-400 whitespace-nowrap text-[10px]">{inc.report_date?.slice(0, 10)}</td>
+                <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                  {isOnKanban ? (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-green-600 bg-green-50 border border-green-200 rounded-lg px-2 py-1">
+                      <CheckCheck className="w-3 h-3" />
+                      On Kanban
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => onMoveToKanban(inc)}
+                      disabled={isMoving}
+                      title="Move this incident to the HSE Kanban workflow"
+                      className={`inline-flex items-center gap-1 text-[10px] font-semibold rounded-lg px-2.5 py-1.5 transition-all border ${
+                        isMoving
+                          ? 'bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed'
+                          : 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100 hover:border-indigo-300 cursor-pointer'
+                      }`}
+                    >
+                      {isMoving ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <GitBranch className="w-3 h-3" />
+                      )}
+                      {isMoving ? 'Moving…' : 'Move to Kanban'}
+                    </button>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
       {incidents.length === 0 && (
@@ -306,7 +376,7 @@ function ListView({ incidents, onClickIncident }: { incidents: IncidentSummary[]
   );
 }
 
-// ─── Filter Pill Component ─────────────────────────────────────────────────────
+// ─── Filter Pill Component ──────────────────────────────────────────────────────
 
 interface FilterPillProps {
   label: string;
@@ -333,12 +403,37 @@ function FilterPill({ label, value, options, onChange }: FilterPillProps) {
   );
 }
 
-// ─── Main Board ────────────────────────────────────────────────────────────────
+// ─── Kanban Column Counts Summary ───────────────────────────────────────────────
+
+function WorkflowSummaryBar({ grouped }: { grouped: Record<KanbanWorkflowStatus, IncidentSummary[]> }) {
+  return (
+    <div className="flex items-center gap-2 flex-wrap">
+      {WORKFLOW_COLUMNS.map((col) => {
+        const cfg = WORKFLOW_COLUMN_CONFIG[col];
+        const count = grouped[col].length;
+        return (
+          <div
+            key={col}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[11px] font-semibold"
+            style={{ background: cfg.headerBg, color: cfg.headerText, borderColor: `${cfg.dotColor}30` }}
+          >
+            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: cfg.dotColor }} />
+            {cfg.label}
+            <span className="font-bold">{count}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Main Board ─────────────────────────────────────────────────────────────────
 
 export function IncidentBoard() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
+  const addToast = useUIStore((s) => s.addToast);
 
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
   const [search, setSearch] = useState(searchParams.get('search') ?? '');
@@ -347,7 +442,11 @@ export function IncidentBoard() {
   const [site, setSite] = useState(searchParams.get('site_name') ?? '');
   const [sifOnly, setSifOnly] = useState(searchParams.get('sif_only') === 'true');
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [localPriorityMap, setLocalPriorityMap] = useState<Record<string, Priority>>({});
+
+  // Optimistic local kanban status map: incidentId -> KanbanWorkflowStatus
+  const [localKanbanMap, setLocalKanbanMap] = useState<Record<string, KanbanWorkflowStatus>>({});
+  // Tracks which IDs are currently being moved to Kanban (for loading state)
+  const [movingIds, setMovingIds] = useState<Set<string>>(new Set());
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -358,7 +457,7 @@ export function IncidentBoard() {
     queryFn: () =>
       fetchIncidents({
         page: 1,
-        page_size: 50,
+        page_size: 200,
         search,
         priority,
         status: status as never,
@@ -368,18 +467,35 @@ export function IncidentBoard() {
     staleTime: 30000,
   });
 
-  const updateMutation = useMutation({
-    mutationFn: ({ id, newPriority }: { id: string; newPriority: Priority }) =>
-      updateIncident(id, { priority: newPriority }),
+  // Mutation: update kanban_status on drag-and-drop
+  const kanbanStatusMutation = useMutation({
+    mutationFn: ({ id, kanban_status }: { id: string; kanban_status: KanbanWorkflowStatus }) =>
+      updateKanbanStatus(id, kanban_status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['incidents'] });
     },
     onError: (_err, { id }) => {
-      setLocalPriorityMap((prev) => {
+      // Roll back optimistic update
+      setLocalKanbanMap((prev) => {
         const next = { ...prev };
         delete next[id];
         return next;
       });
+      addToast('Failed to update workflow status. Please try again.', 'error');
+    },
+  });
+
+  // Mutation: move incident to Kanban from List view
+  const moveToKanbanMutation = useMutation({
+    mutationFn: (id: string) => moveToKanban(id),
+    onSuccess: (_data, id) => {
+      setMovingIds((prev) => { const s = new Set(prev); s.delete(id); return s; });
+      queryClient.invalidateQueries({ queryKey: ['incidents'] });
+      addToast('Incident moved to Kanban — Under Assessment', 'success');
+    },
+    onError: (_err, id) => {
+      setMovingIds((prev) => { const s = new Set(prev); s.delete(id); return s; });
+      addToast('Failed to move incident to Kanban. Please try again.', 'error');
     },
   });
 
@@ -394,24 +510,29 @@ export function IncidentBoard() {
   }, [search, priority, status, site, sifOnly, setSearchParams]);
 
   const incidents = data?.items ?? [];
-  const totalCount = data?.total ?? incidents.length;
 
+  // Apply local optimistic kanban_status overrides
   const effectiveIncidents = incidents.map((inc) => ({
     ...inc,
-    priority: localPriorityMap[inc.id] ?? inc.priority,
+    kanban_status: localKanbanMap[inc.id] ?? inc.kanban_status ?? null,
   }));
 
-  const grouped: Record<Priority, IncidentSummary[]> = {
-    CRITICAL: [],
-    HIGH: [],
-    MEDIUM: [],
-    LOW: [],
+  // Group incidents by kanban_status for the Kanban board view
+  // Only incidents that have been explicitly moved to Kanban appear on the board
+  const grouped: Record<KanbanWorkflowStatus, IncidentSummary[]> = {
+    UNDER_ASSESSMENT: [],
+    ACTION_IN_PROGRESS: [],
+    PENDING_VERIFICATION: [],
+    CLOSED: [],
   };
   effectiveIncidents.forEach((inc) => {
-    const col = inc.priority as Priority;
-    if (grouped[col]) grouped[col].push(inc);
+    const ks = inc.kanban_status as KanbanWorkflowStatus;
+    if (ks && grouped[ks]) {
+      grouped[ks].push(inc as IncidentSummary);
+    }
   });
 
+  const totalKanbanCount = Object.values(grouped).reduce((sum, arr) => sum + arr.length, 0);
   const activeIncident = activeId ? effectiveIncidents.find((i) => i.id === activeId) : null;
 
   const handleDragStart = useCallback((e: DragStartEvent) => {
@@ -429,21 +550,46 @@ export function IncidentBoard() {
       if (!draggedIncident) return;
 
       const overId = String(over.id);
+
+      // Determine the target column:
+      // If dropped onto another card, resolve that card's column.
+      // If dropped directly onto a column droppable, overId IS the column status.
       const overIncident = effectiveIncidents.find((i) => i.id === overId);
-      const newPriority = (overIncident?.priority ?? overId) as Priority;
+      let newStatus: KanbanWorkflowStatus;
 
-      if (!PRIORITY_COLUMNS.includes(newPriority)) return;
-      if (draggedIncident.priority === newPriority) return;
+      if (overIncident?.kanban_status && WORKFLOW_COLUMNS.includes(overIncident.kanban_status as KanbanWorkflowStatus)) {
+        newStatus = overIncident.kanban_status as KanbanWorkflowStatus;
+      } else if (WORKFLOW_COLUMNS.includes(overId as KanbanWorkflowStatus)) {
+        newStatus = overId as KanbanWorkflowStatus;
+      } else {
+        return; // Invalid drop target
+      }
 
-      setLocalPriorityMap((prev) => ({ ...prev, [draggedId]: newPriority }));
-      updateMutation.mutate({ id: draggedId, newPriority });
+      const currentStatus = draggedIncident.kanban_status as KanbanWorkflowStatus;
+      if (currentStatus === newStatus) return; // No change
+
+      // Optimistic update
+      setLocalKanbanMap((prev) => ({ ...prev, [draggedId]: newStatus }));
+      kanbanStatusMutation.mutate({ id: draggedId, kanban_status: newStatus });
     },
-    [effectiveIncidents, updateMutation]
+    [effectiveIncidents, kanbanStatusMutation]
   );
 
   const handleClickIncident = useCallback(
     (id: string) => navigate(`/incidents/${id}`),
     [navigate]
+  );
+
+  const handleMoveToKanban = useCallback(
+    (incident: IncidentSummary) => {
+      if (incident.kanban_status) {
+        addToast(`${incident.id} is already on the Kanban board (${WORKFLOW_COLUMN_CONFIG[incident.kanban_status as KanbanWorkflowStatus]?.label ?? incident.kanban_status})`, 'info');
+        return;
+      }
+      setMovingIds((prev) => new Set(prev).add(incident.id));
+      moveToKanbanMutation.mutate(incident.id);
+    },
+    [moveToKanbanMutation, addToast]
   );
 
   const clearFilters = () => {
@@ -461,9 +607,9 @@ export function IncidentBoard() {
 
   return (
     <div className="flex flex-col h-full bg-[#F4F5F9]">
-      {/* ─── Page Header ─────────────────────────────────────────────────────── */}
+      {/* ─── Page Header ───────────────────────────────────────────────────── */}
       <div className="px-7 pt-7 pb-5 bg-[#F4F5F9] flex-shrink-0">
-        <div className="flex items-start justify-between mb-5">
+        <div className="flex items-start justify-between mb-4">
           <div>
             <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Incident Board</h1>
             <p className="text-sm text-slate-500 mt-1">
@@ -471,30 +617,22 @@ export function IncidentBoard() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            {/* Date range pill */}
-            <button className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200/90 rounded-2xl text-[12px] font-medium text-slate-700 shadow-sm hover:bg-slate-50 transition-colors">
-              <Calendar className="w-3.5 h-3.5 text-slate-400" />
-              Apr 24, 2026 - May 28, 2026
-              <ChevronDown className="w-3 h-3 text-slate-400" />
-            </button>
             {/* Export */}
             <button className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200/90 rounded-2xl text-[12px] font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition-colors">
               <Download className="w-3.5 h-3.5 text-slate-500" />
               Export Report
             </button>
-            {/* New report */}
-            <button
-              onClick={() => navigate('/')}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-2xl text-[12px] font-bold text-white shadow-[0_2px_8px_rgba(37,99,235,0.35)] transition-all hover:opacity-90"
-              style={{ background: 'linear-gradient(135deg, #1B3A6B 0%, #2563EB 100%)' }}
-            >
-              <PlusCircle className="w-3.5 h-3.5" />
-              New SIF Report
-            </button>
           </div>
         </div>
 
-        {/* ─── Filter Toolbar ─────────────────────────────────────────────────── */}
+        {/* Workflow status summary bar — only in Kanban view */}
+        {viewMode === 'kanban' && totalKanbanCount > 0 && (
+          <div className="mb-4">
+            <WorkflowSummaryBar grouped={grouped} />
+          </div>
+        )}
+
+        {/* ─── Filter Toolbar ───────────────────────────────────────────────── */}
         <div className="flex items-center gap-3 flex-wrap">
           {/* View toggle */}
           <div className="flex items-center bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
@@ -526,20 +664,20 @@ export function IncidentBoard() {
             />
           </div>
 
-          {/* Priority filter */}
+          {/* Risk level / Priority filter — independent from workflow status */}
           <FilterPill
-            label="All Priorities"
+            label="All Risk Levels"
             value={priority}
             onChange={(v) => setPriority(v as Priority | '')}
             options={[
-              { label: 'Critical', value: 'CRITICAL' },
-              { label: 'High', value: 'HIGH' },
-              { label: 'Medium', value: 'MEDIUM' },
-              { label: 'Low', value: 'LOW' },
+              { label: 'Critical Risk', value: 'CRITICAL' },
+              { label: 'High Risk', value: 'HIGH' },
+              { label: 'Medium Risk', value: 'MEDIUM' },
+              { label: 'Low Risk', value: 'LOW' },
             ]}
           />
 
-          {/* Status filter */}
+          {/* Incident status filter (old workflow status, independent from Kanban) */}
           <FilterPill
             label="All Statuses"
             value={status}
@@ -588,40 +726,66 @@ export function IncidentBoard() {
           )}
 
           {/* Active count pill */}
-          <div className="ml-auto flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-xl">
-            <span className="text-[11px] font-bold text-blue-700">●</span>
-            <span className="text-[12px] font-semibold text-blue-700">{effectiveIncidents.length} Active Incidents</span>
+          <div className="ml-auto flex items-center gap-3">
+            {viewMode === 'kanban' && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 border border-indigo-100 rounded-xl">
+                <span className="text-[11px] font-bold text-indigo-700">●</span>
+                <span className="text-[12px] font-semibold text-indigo-700">{totalKanbanCount} in Workflow</span>
+              </div>
+            )}
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-xl">
+              <span className="text-[11px] font-bold text-blue-700">●</span>
+              <span className="text-[12px] font-semibold text-blue-700">{effectiveIncidents.length} Total Incidents</span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* ─── Content ─────────────────────────────────────────────────────────── */}
+      {/* ─── Content ───────────────────────────────────────────────────────── */}
       <div className="flex-1 overflow-auto px-7 pb-7">
         {viewMode === 'list' ? (
-          <ListView incidents={effectiveIncidents} onClickIncident={handleClickIncident} />
+          <ListView
+            incidents={effectiveIncidents as IncidentSummary[]}
+            onClickIncident={handleClickIncident}
+            onMoveToKanban={handleMoveToKanban}
+            movingIds={movingIds}
+          />
         ) : (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragStart={handleDragStart}
-            onDragEnd={handleDragEnd}
-          >
-            <div className="flex gap-4 h-full">
-              {PRIORITY_COLUMNS.map((col) => (
-                <KanbanColumn
-                  key={col}
-                  priority={col}
-                  incidents={grouped[col]}
-                  onClickIncident={handleClickIncident}
-                  totalCount={grouped[col].length}
-                />
-              ))}
-            </div>
+          <>
+            {/* Kanban board hint when empty */}
+            {totalKanbanCount === 0 && (
+              <div className="mb-4 p-4 bg-indigo-50 border border-indigo-200 rounded-2xl flex items-start gap-3">
+                <GitBranch className="w-5 h-5 text-indigo-500 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-sm font-semibold text-indigo-800">No incidents in the HSE workflow yet</p>
+                  <p className="text-xs text-indigo-600 mt-0.5">
+                    Switch to <strong>List view</strong> and click <strong>"Move to Kanban"</strong> on any incident to begin the HSE assessment workflow.
+                  </p>
+                </div>
+              </div>
+            )}
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+            >
+              <div className="flex gap-4 h-full">
+                {WORKFLOW_COLUMNS.map((col) => (
+                  <KanbanColumn
+                    key={col}
+                    status={col}
+                    incidents={grouped[col]}
+                    onClickIncident={handleClickIncident}
+                  />
+                ))}
+              </div>
 
-            <DragOverlay>
-              {activeIncident && <StaticIncidentCard incident={activeIncident} />}
-            </DragOverlay>
-          </DndContext>
+              <DragOverlay>
+                {activeIncident && <StaticIncidentCard incident={activeIncident as IncidentSummary} />}
+              </DragOverlay>
+            </DndContext>
+          </>
         )}
       </div>
     </div>

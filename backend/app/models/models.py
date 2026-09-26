@@ -135,8 +135,11 @@ class IncidentMeta(Base):
     __tablename__ = "incident_meta"
 
     report_id = Column(String, primary_key=True)
-    priority = Column(String, default="HIGH")  # CRITICAL, HIGH, MEDIUM, LOW
-    status = Column(String, default="OPEN")  # OPEN, INVESTIGATING, ACTION_REQUIRED, CLOSED
+    priority = Column(String, default="HIGH")  # CRITICAL, HIGH, MEDIUM, LOW (risk level)
+    status = Column(String, default="OPEN")  # OPEN, INVESTIGATING, ACTION_REQUIRED, CLOSED (incident status)
+    # HSE Kanban workflow status — NULL means not yet moved to Kanban board
+    # Values: UNDER_ASSESSMENT | ACTION_IN_PROGRESS | PENDING_VERIFICATION | CLOSED
+    kanban_status = Column(String, nullable=True, default=None)
     assigned_to = Column(String)
     assigned_at = Column(DateTime)
     created_at = Column(DateTime)

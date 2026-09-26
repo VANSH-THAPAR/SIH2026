@@ -59,6 +59,9 @@ class IncidentSummary(BaseModel):
     sif_potential: Optional[bool] = None
     priority: str = "HIGH"
     status: str = "OPEN"
+    # HSE Kanban workflow status (None = not yet on Kanban board)
+    # Values: UNDER_ASSESSMENT | ACTION_IN_PROGRESS | PENDING_VERIFICATION | CLOSED
+    kanban_status: Optional[str] = None
     assigned_to: Optional[str] = None
     hazard: Optional[str] = None
     energy_source: Optional[str] = None
@@ -168,6 +171,8 @@ class IncidentDetail(BaseModel):
     # Application meta
     priority: str = "HIGH"
     status: str = "OPEN"
+    # HSE Kanban workflow status (None = not yet on Kanban board)
+    kanban_status: Optional[str] = None
     assigned_to: Optional[str] = None
     # Analysis
     unsafe_act: Optional[str] = None
@@ -223,6 +228,8 @@ class IncidentListResponse(BaseModel):
 class IncidentUpdate(BaseModel):
     priority: Optional[str] = None
     status: Optional[str] = None
+    # HSE Kanban workflow status update
+    kanban_status: Optional[str] = None
     assigned_to: Optional[str] = None
 
 

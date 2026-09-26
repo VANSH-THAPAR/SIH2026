@@ -8,11 +8,10 @@ import {
   BarChart3,
   Settings,
   Flame,
-  Radio,
-  PlusCircle,
+  LogOut,
 } from 'lucide-react';
-import { useState } from 'react';
-import { NewReportForm } from '../forms/NewReportForm';
+import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '@/store/authStore';
 
 const NAV_ITEMS = [
   { path: '/', label: 'Command Center', icon: LayoutDashboard, exact: true },
@@ -26,7 +25,8 @@ const NAV_ITEMS = [
 
 export function Sidebar() {
   const location = useLocation();
-  const [isNewReportOpen, setIsNewReportOpen] = useState(false);
+  const navigate = useNavigate();
+  const { user, logout } = useAuthStore();
 
   return (
     <div
@@ -51,17 +51,6 @@ export function Sidebar() {
         <div className="text-[10px] text-slate-400 mt-2 font-medium">HSSE Intelligence System</div>
       </div>
 
-      {/* Live Telemetry pill */}
-      <div className="px-4 pt-4 pb-2">
-        <div className="flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-2 border border-slate-100">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-          </span>
-          <span className="text-[11px] font-semibold text-slate-600 uppercase tracking-widest">Live Telemetry</span>
-          <Radio className="w-3 h-3 text-emerald-500 ml-auto" />
-        </div>
-      </div>
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto pt-2 px-3">
@@ -92,42 +81,43 @@ export function Sidebar() {
           })}
         </div>
       </nav>
-
-      {/* New Report CTA */}
-      <div className="px-3 pb-3">
-        <button
-          onClick={() => setIsNewReportOpen(true)}
-          className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-xs font-semibold transition-all"
-          style={{
-            background: 'linear-gradient(135deg, #1B3A6B 0%, #2563EB 100%)',
-            color: '#FFFFFF',
-            boxShadow: '0 2px 8px rgba(37,99,235,0.3)',
-          }}
-        >
-          <PlusCircle className="w-3.5 h-3.5" />
-          New SIF Report
-        </button>
-      </div>
-
       {/* Bottom user section */}
       <div className="px-4 py-3 border-t border-slate-100">
         <div className="flex items-center gap-2.5">
           <div
             className="flex items-center justify-center rounded-full text-white text-[10px] font-bold flex-shrink-0"
-            style={{ width: 28, height: 28, background: '#1B3A6B' }}
+            style={{
+              width: 28,
+              height: 28,
+              background:
+                user?.role === 'reporter'
+                  ? 'linear-gradient(135deg, #059669 0%, #10B981 100%)'
+                  : 'linear-gradient(135deg, #1B3A6B 0%, #2563EB 100%)',
+            }}
           >
-            OP
+            {user?.email ? user.email.slice(0, 2).toUpperCase() : 'OP'}
           </div>
           <div className="overflow-hidden flex-1 min-w-0">
-            <div className="text-slate-800 text-[12px] font-semibold truncate">OPS Administrator</div>
-            <div className="text-slate-400 text-[10px]">HSE Manager</div>
+            <div className="text-slate-800 text-[12px] font-semibold truncate">
+              {user?.email ? user.email.split('@')[0] : 'OPS Admin'}
+            </div>
+            <div className="text-slate-400 text-[10px]">
+              {user?.role === 'hse' ? 'HSE Manager' : 'Field Reporter'}
+            </div>
           </div>
+          <button
+            onClick={() => {
+              logout();
+              navigate('/login');
+            }}
+            title="Sign Out"
+            className="p-1 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
 
-      {isNewReportOpen && (
-        <NewReportForm onClose={() => setIsNewReportOpen(false)} />
-      )}
     </div>
   );
 }

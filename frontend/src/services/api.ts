@@ -17,6 +17,11 @@ import type {
  ActionFilters,
  Priority,
  ActionStatus,
+ KanbanWorkflowStatus,
+ User,
+ AuthResponse,
+ LoginCredentials,
+ RegisterCredentials,
 } from '../types';
 
 const api = axios.create({
@@ -25,13 +30,54 @@ const api = axios.create({
  timeout: 30000,
 });
 
+// Attach Bearer token from localStorage if available
+api.interceptors.request.use((config) => {
+ const token = localStorage.getItem('token');
+ if (token) {
+ config.headers.Authorization = `Bearer ${token}`;
+ }
+ return config;
+});
+
 api.interceptors.response.use(
  (res) => res,
  (err) => {
+ if (err.response?.status === 401 && !window.location.pathname.startsWith('/login')) {
+ localStorage.removeItem('token');
+ localStorage.removeItem('user');
+ window.location.href = '/login';
+ }
  console.error('[API Error]', err.response?.status, err.response?.data ?? err.message);
  return Promise.reject(err);
  }
 );
+
+// ─── Auth ───────────────────────────────────────────────────────────────────
+
+export const loginApi = async (credentials: LoginCredentials): Promise<AuthResponse> => {
+ const params = new URLSearchParams();
+ params.append('username', credentials.email.trim());
+ params.append('password', credentials.password);
+
+ const res = await api.post<AuthResponse>('/auth/login', params, {
+ headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+ });
+ return res.data;
+};
+
+export const registerApi = async (credentials: RegisterCredentials): Promise<User> => {
+ const res = await api.post<User>('/auth/register', {
+ email: credentials.email.trim(),
+ password: credentials.password,
+ role: credentials.role,
+ });
+ return res.data;
+};
+
+export const fetchMeApi = async (): Promise<User> => {
+ const res = await api.get<User>('/auth/me');
+ return res.data;
+};
 
 // ─── Incidents ───────────────────────────────────────────────────────────────
 
@@ -65,10 +111,30 @@ export const createIncident = async (body: IncidentCreate): Promise<IncidentSumm
 
 export const updateIncident = async (
  id: string,
- body: { priority?: Priority; status?: string; assigned_to?: string }
+ body: { priority?: Priority; status?: string; assigned_to?: string; kanban_status?: KanbanWorkflowStatus | null }
 ): Promise<IncidentDetail> => {
  const res = await api.put<IncidentDetail>(`/incidents/${id}`, body);
  return res.data;
+};
+
+/**
+ * Move an incident from the List view onto the HSE Kanban workflow.
+ * Sets kanban_status = UNDER_ASSESSMENT (initial workflow state).
+ * Idempotent — if already on Kanban, use updateKanbanStatus instead.
+ */
+export const moveToKanban = async (id: string): Promise<IncidentDetail> => {
+ return updateIncident(id, { kanban_status: 'UNDER_ASSESSMENT' });
+};
+
+/**
+ * Update an incident's Kanban workflow status (e.g. on drag-and-drop).
+ * Does NOT change priority/risk level.
+ */
+export const updateKanbanStatus = async (
+ id: string,
+ kanban_status: KanbanWorkflowStatus
+): Promise<IncidentDetail> => {
+ return updateIncident(id, { kanban_status });
 };
 
 export const fetchIncidentActions = async (id: string): Promise<ActionSummary[]> => {
@@ -178,8 +244,8 @@ export const fetchLSRs = async (): Promise<LSRCatalog[]> => {
 // ─── Patterns ─────────────────────────────────────────────────────────────────
 
 export const fetchPatterns = async (): Promise<PatternCluster[]> => {
- const res = await api.get<any>('/patterns');
- return res.data.patterns || res.data;
+ const res = await api.get<{ patterns: PatternCluster[] } | PatternCluster[]>('/patterns');
+ return Array.isArray(res.data) ? res.data : res.data.patterns ?? [];
 };
 
 export default api;

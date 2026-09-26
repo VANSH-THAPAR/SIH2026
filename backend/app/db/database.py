@@ -1,23 +1,37 @@
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
+from sqlalchemy.pool import NullPool, QueuePool
 from app.core.config import DATABASE_URL
 
-# QueuePool with pre_ping for Neon serverless — automatically reconnects
-# if the server drops an idle connection between queries.
-engine = create_engine(
-    DATABASE_URL,
-    pool_pre_ping=True,       # Test connection before use; reconnect if dropped
-    pool_recycle=300,         # Recycle connections every 5 min (Neon drops idle after ~5 min)
-    pool_size=5,              # Keep up to 5 connections in the pool
-    max_overflow=10,          # Allow up to 10 extra connections under load
-    connect_args={
-        "sslmode": "require",
-        "keepalives": 1,
-        "keepalives_idle": 30,
-        "keepalives_interval": 10,
-        "keepalives_count": 5,
-    },
-)
+# Neon Serverless connection configuration:
+# When connecting to Neon's PgBouncer pooler endpoint (*-pooler*),
+# Neon manages server-side pooling and terminates idle client connections
+# when the compute scales to zero.
+# To prevent "server closed the connection unexpectedly" caused by double-pooling
+# stale connections, use NullPool for pooler endpoints, or short pool_recycle for direct endpoints.
+is_pooler = "-pooler" in DATABASE_URL
+
+if is_pooler:
+    engine = create_engine(
+        DATABASE_URL,
+        poolclass=NullPool,
+        connect_args={
+            "sslmode": "require",
+            "connect_timeout": 15,
+        },
+    )
+else:
+    engine = create_engine(
+        DATABASE_URL,
+        pool_pre_ping=True,
+        pool_recycle=60,  # Recycle every 60s to prevent stale serverless connections
+        pool_size=5,
+        max_overflow=10,
+        connect_args={
+            "sslmode": "require",
+            "connect_timeout": 15,
+        },
+    )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

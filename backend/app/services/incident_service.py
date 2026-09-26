@@ -65,6 +65,7 @@ def _build_summary(
     priority = meta.priority if meta else calculate_priority(sif_score)
     status = meta.status if meta else "OPEN"
     assigned_to = meta.assigned_to if meta else None
+    kanban_status = meta.kanban_status if meta else None
 
     title = derive_incident_title(
         report_type=report.report_type,
@@ -104,6 +105,7 @@ def _build_summary(
         sif_potential=analysis.sif_potential if analysis else None,
         priority=priority,
         status=status,
+        kanban_status=kanban_status,
         assigned_to=assigned_to,
         hazard=analysis.hazard if analysis else None,
         energy_source=analysis.energy_source if analysis else None,
@@ -203,7 +205,12 @@ def get_incidents(
 
     # Build summaries
     summaries = []
+    seen_ids = set()
     for report, analysis in rows:
+        if report.report_id in seen_ids:
+            continue
+        seen_ids.add(report.report_id)
+
         meta = metas.get(report.report_id)
         
         summary = _build_summary(
@@ -359,6 +366,7 @@ def get_incident_detail(db: Session, report_id: str) -> Optional[IncidentDetail]
         source=report.source,
         priority=meta.priority,
         status=meta.status,
+        kanban_status=meta.kanban_status,
         assigned_to=meta.assigned_to,
         unsafe_act=analysis.unsafe_act if analysis else None,
         unsafe_condition=analysis.unsafe_condition if analysis else None,
@@ -404,6 +412,8 @@ def update_incident(db: Session, report_id: str, update: IncidentUpdate) -> Opti
         meta.priority = update.priority.upper()
     if update.status is not None:
         meta.status = update.status.upper()
+    if update.kanban_status is not None:
+        meta.kanban_status = update.kanban_status.upper()
     if update.assigned_to is not None:
         meta.assigned_to = update.assigned_to
 
