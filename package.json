@@ -1,0 +1,11 @@
+{
+  "scripts": {
+    "dev": "concurrently \"npm run frontend\" \"npm run backend\"",
+    "frontend": "npm run dev:frontend",
+    "backend": "uvicorn app.main:app --reload --port 8000",
+    "dev:frontend": "YOUR_EXISTING_FRONTEND_DEV_COMMAND"
+  },
+  "dependencies": {
+    "concurrently": "^10.0.5"
+  }
+}
