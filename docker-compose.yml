@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: Dockerfile.backend
     ports:
-      - "8000:8000"
+      - "8000:7860"
     env_file:
       - backend/.env  # Make sure you have your Neon DATABASE_URL here
     restart: always
