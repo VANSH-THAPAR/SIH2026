@@ -1,0 +1,26 @@
+{
+  "name": "sih2026",
+  "version": "1.0.0",
+  "description": "This application converts OIL HSE/HSSE safety reports into structured safety intelligence, providing AI-powered insights into Serious Injury and Fatality (SIF) potential.",
+  "main": "index.js",
+  "scripts": {
+    "frontend": "npm run dev --prefix frontend",
+    "backend": "cd backend && .\\venv\\Scripts\\activate && uvicorn app.main:app --reload",
+    "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/VANSH-THAPAR/SIH2026.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/VANSH-THAPAR/SIH2026/issues"
+  },
+  "homepage": "https://github.com/VANSH-THAPAR/SIH2026#readme",
+  "devDependencies": {
+    "concurrently": "^10.0.5"
+  }
+}

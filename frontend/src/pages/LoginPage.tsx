@@ -1,17 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
-  ShieldCheck,
-  Mail,
-  Lock,
-  Eye,
-  EyeOff,
-  UserCheck,
-  Radio,
-  ArrowRight,
-  AlertCircle,
-  Sparkles,
-  Zap,
+  Mail, Lock, Eye, EyeOff, UserCheck, ArrowRight, AlertCircle, Zap, ShieldCheck,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import type { UserRole } from '@/types';
@@ -19,8 +9,7 @@ import type { UserRole } from '@/types';
 export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, register, quickLogin, isAuthenticated, error, clearError, isLoading } =
-    useAuthStore();
+  const { login, register, quickLogin, isAuthenticated, error, clearError, isLoading } = useAuthStore();
 
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
@@ -34,14 +23,10 @@ export function LoginPage() {
 
   const destination = (location.state as any)?.from?.pathname || '/';
 
-  // If already authenticated, redirect
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate(destination, { replace: true });
-    }
+    if (isAuthenticated) navigate(destination, { replace: true });
   }, [isAuthenticated, navigate, destination]);
 
-  // Clear errors when switching tabs
   const handleTabSwitch = (newMode: 'login' | 'register') => {
     setMode(newMode);
     clearError();
@@ -60,7 +45,7 @@ export function LoginPage() {
 
     if (mode === 'register') {
       if (password.length < 6) {
-        setLocalError('Password must be at least 6 characters long.');
+        setLocalError('Password must be at least 6 characters.');
         return;
       }
       if (password !== confirmPassword) {
@@ -79,10 +64,10 @@ export function LoginPage() {
         setMode('login');
         setPassword('');
         setConfirmPassword('');
-        setLocalError('Registration successful. Please log in.'); // Using localError to display a message (it gets styled as an error, but it's better than nothing)
+        setLocalError('Registration successful — please sign in.');
       }
     } catch {
-      // Error handled in store
+      // error handled in store
     } finally {
       setSubmitting(false);
     }
@@ -96,270 +81,290 @@ export function LoginPage() {
       await quickLogin(targetRole);
       navigate(destination, { replace: true });
     } catch {
-      // Handled in store
+      // handled in store
     } finally {
       setQuickLoginRole(null);
     }
   };
 
   const displayError = localError || error;
+  const isSuccess = displayError?.includes('successful');
+
+  const inputCls = `w-full pl-10 pr-4 py-2.5 text-[13px] border border-white/10 rounded-xl text-white
+    placeholder-white/30 focus:outline-none focus:border-[var(--color-orange-brand)] focus:ring-1
+    focus:ring-[var(--color-orange-brand)] transition-colors bg-white/5`;
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-slate-950 font-sans">
-      {/* Background radial ambient lights */}
-      <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-blue-600/15 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-emerald-600/10 blur-[140px] pointer-events-none" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-indigo-950/20 blur-[160px] pointer-events-none" />
+    <div
+      className="min-h-screen flex items-center justify-center p-4 overflow-hidden relative"
+      style={{ background: '#141311' }}
+    >
+      {/* Ambient light — warm industrial */}
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          top: '-15%', left: '-10%',
+          width: 600, height: 600,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(232,101,10,0.12) 0%, transparent 70%)',
+        }}
+      />
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          bottom: '-15%', right: '-10%',
+          width: 500, height: 500,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(232,101,10,0.06) 0%, transparent 70%)',
+        }}
+      />
 
-      {/* Main Container Card */}
       <div className="w-full max-w-md relative z-10">
-        {/* Brand Banner */}
-        <div className="text-center mb-6">
-
-
-          <div className="flex items-center justify-center gap-3 mb-2">
+        {/* Brand */}
+        <div className="text-center mb-7">
+          <div className="flex items-center justify-center gap-3 mb-3">
             <div
-              className="flex items-center justify-center rounded-xl shadow-lg shadow-blue-900/40"
-              style={{ width: 44, height: 44, background: 'linear-gradient(135deg, #1B3A6B 0%, #2563EB 100%)' }}
+              className="w-11 h-11 rounded-xl flex items-center justify-center"
+              style={{ background: 'var(--color-orange-brand)' }}
             >
-              <span className="text-white font-black text-sm tracking-tight">OIL</span>
+              <svg viewBox="0 0 20 20" fill="none" className="w-5 h-5">
+                <path
+                  d="M10 2 L16 5.5 L16 12.5 C16 16 13 18.5 10 19.5 C7 18.5 4 16 4 12.5 L4 5.5 Z"
+                  fill="none" stroke="white" strokeWidth="1.5" strokeLinejoin="round"
+                />
+                <path
+                  d="M8 10.5 C8 9 9 8 10 8 C11 8 12 9 12 10.5 C12 11.5 11 12 10 12.5 C9 13 8 13.5 8 15"
+                  stroke="white" strokeWidth="1.3" strokeLinecap="round" fill="none"
+                />
+              </svg>
             </div>
             <div className="text-left">
-              <h1 className="font-black text-xl leading-none text-white tracking-tight">INDIANOIL</h1>
-              <p className="text-[11px] text-blue-400 font-semibold uppercase tracking-wider mt-0.5">
-                SIF Precursor Intelligence
-              </p>
+              <div className="text-[18px] font-black text-white tracking-tight leading-none">
+                SIF Intelligence
+              </div>
+              <div className="text-[10px] font-semibold uppercase tracking-widest mt-0.5"
+                style={{ color: 'var(--color-orange-brand)' }}>
+                HSE Risk Platform
+              </div>
             </div>
           </div>
-          <p className="text-[12px] text-slate-400 max-w-xs mx-auto">
-            Operational Safety & Barrier Integrity Management System
+          <p className="text-[12px] text-white/40 max-w-xs mx-auto">
+            Operational Safety & Barrier Integrity Management
           </p>
         </div>
 
-        {/* Auth Glass Box */}
-        <div className="bg-slate-900/80 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-6 sm:p-7 shadow-[0_16px_40px_rgba(0,0,0,0.5)]">
-          {/* Mode Switcher Tabs */}
-          <div className="grid grid-cols-2 p-1 bg-slate-950/70 rounded-xl border border-slate-800/80 mb-6">
-            <button
-              type="button"
-              onClick={() => handleTabSwitch('login')}
-              className={`py-2 text-[13px] font-semibold rounded-lg transition-all ${
-                mode === 'login'
-                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Sign In
-            </button>
-            <button
-              type="button"
-              onClick={() => handleTabSwitch('register')}
-              className={`py-2 text-[13px] font-semibold rounded-lg transition-all ${
-                mode === 'register'
-                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Register Account
-            </button>
+        {/* Auth card */}
+        <div
+          className="rounded-2xl p-7 shadow-2xl"
+          style={{
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            backdropFilter: 'blur(20px)',
+          }}
+        >
+          {/* Mode tabs */}
+          <div
+            className="grid grid-cols-2 p-1 rounded-xl mb-6"
+            style={{ background: 'rgba(255,255,255,0.05)' }}
+          >
+            {(['login', 'register'] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => handleTabSwitch(m)}
+                className={`py-2.5 text-[12.5px] font-semibold rounded-lg transition-all ${
+                  mode === m
+                    ? 'text-white shadow-md'
+                    : 'text-white/40 hover:text-white/70'
+                }`}
+                style={mode === m ? { background: 'var(--color-orange-brand)' } : undefined}
+              >
+                {m === 'login' ? 'Sign In' : 'Register'}
+              </button>
+            ))}
           </div>
 
-          {/* Quick Demo Login Option */}
-          <div className="mb-6 p-3 rounded-xl bg-slate-800/40 border border-slate-700/50">
-            <div className="flex items-center gap-1.5 mb-2.5 text-[11px] font-semibold text-slate-300">
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              <span>Instant Demo Access (1-Click)</span>
+          {/* Quick demo */}
+          <div
+            className="mb-6 p-4 rounded-xl"
+            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+          >
+            <div className="text-[10.5px] font-semibold text-white/50 mb-3 uppercase tracking-widest">
+              ⚡ 1-Click Demo Access
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => handleQuickDemo('hse')}
-                disabled={submitting || !!quickLoginRole}
-                className="flex flex-col items-start p-2.5 rounded-lg bg-slate-900/90 hover:bg-slate-850 border border-slate-700/60 hover:border-blue-500/50 text-left transition-all group disabled:opacity-50"
-              >
-                <div className="flex items-center justify-between w-full">
-                  <span className="text-[11px] font-bold text-blue-400 flex items-center gap-1">
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                    HSE Admin
-                  </span>
-                  {quickLoginRole === 'hse' ? (
-                    <div className="w-3 h-3 rounded-full border-2 border-blue-400 border-t-transparent animate-spin" />
-                  ) : (
-                    <Zap className="w-3 h-3 text-slate-500 group-hover:text-amber-400 transition-colors" />
-                  )}
-                </div>
-                <span className="text-[10px] text-slate-400 mt-0.5 truncate w-full">Full Intelligence Access</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickDemo('reporter')}
-                disabled={submitting || !!quickLoginRole}
-                className="flex flex-col items-start p-2.5 rounded-lg bg-slate-900/90 hover:bg-slate-850 border border-slate-700/60 hover:border-emerald-500/50 text-left transition-all group disabled:opacity-50"
-              >
-                <div className="flex items-center justify-between w-full">
-                  <span className="text-[11px] font-bold text-emerald-400 flex items-center gap-1">
-                    <UserCheck className="w-3.5 h-3.5" />
-                    Field Reporter
-                  </span>
-                  {quickLoginRole === 'reporter' ? (
-                    <div className="w-3 h-3 rounded-full border-2 border-emerald-400 border-t-transparent animate-spin" />
-                  ) : (
-                    <Zap className="w-3 h-3 text-slate-500 group-hover:text-amber-400 transition-colors" />
-                  )}
-                </div>
-                <span className="text-[10px] text-slate-400 mt-0.5 truncate w-full">Field Reporting View</span>
-              </button>
+              {[
+                { role: 'hse' as UserRole, label: 'HSE Manager', sub: 'Full Intelligence Access', icon: ShieldCheck },
+                { role: 'reporter' as UserRole, label: 'Field Reporter', sub: 'Report Submission', icon: UserCheck },
+              ].map(({ role: r, label, sub, icon: Icon }) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => handleQuickDemo(r)}
+                  disabled={submitting || !!quickLoginRole}
+                  className="flex flex-col items-start p-3 rounded-xl text-left transition-all disabled:opacity-50 group"
+                  style={{
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid rgba(255,255,255,0.06)',
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(232,101,10,0.4)';
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.06)';
+                  }}
+                >
+                  <div className="flex items-center justify-between w-full mb-1">
+                    <div className="flex items-center gap-1.5">
+                      <Icon className="w-3.5 h-3.5" style={{ color: 'var(--color-orange-brand)' }} />
+                      <span className="text-[11.5px] font-bold text-white/80">{label}</span>
+                    </div>
+                    {quickLoginRole === r ? (
+                      <div className="w-3 h-3 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+                    ) : (
+                      <Zap className="w-3 h-3 text-white/20" />
+                    )}
+                  </div>
+                  <span className="text-[10px] text-white/30">{sub}</span>
+                </button>
+              ))}
             </div>
           </div>
 
-          <div className="relative flex py-1 items-center mb-5">
-            <div className="flex-grow border-t border-slate-800" />
-            <span className="flex-shrink mx-3 text-[10px] uppercase tracking-wider text-slate-500 font-medium">
-              Or {mode === 'login' ? 'enter credentials' : 'create credentials'}
+          {/* Divider */}
+          <div className="relative flex items-center mb-5">
+            <div className="flex-grow border-t border-white/8" />
+            <span className="flex-shrink mx-3 text-[10px] uppercase tracking-wider text-white/30 font-medium">
+              or {mode === 'login' ? 'enter credentials' : 'create account'}
             </span>
-            <div className="flex-grow border-t border-slate-800" />
+            <div className="flex-grow border-t border-white/8" />
           </div>
 
-          {/* Message Box */}
+          {/* Error/success message */}
           {displayError && (
-            <div className={`mb-4 p-3 rounded-xl border flex items-start gap-2.5 text-[12px] animate-fadeIn ${
-              displayError.includes('successful')
-                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-                : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
-            }`}>
-              <AlertCircle className={`w-4 h-4 flex-shrink-0 mt-0.5 ${
-                displayError.includes('successful') ? 'text-emerald-400' : 'text-rose-400'
-              }`} />
+            <div
+              className="mb-4 p-3 rounded-xl flex items-start gap-2.5 text-[12px]"
+              style={{
+                background: isSuccess ? 'rgba(26,112,80,0.15)' : 'rgba(196,30,58,0.15)',
+                border: `1px solid ${isSuccess ? 'rgba(26,112,80,0.3)' : 'rgba(196,30,58,0.3)'}`,
+                color: isSuccess ? '#5BE3AB' : '#FF8080',
+              }}
+            >
+              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
               <span>{displayError}</span>
             </div>
           )}
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Email Field */}
             <div>
-              <label className="block text-[11px] font-medium text-slate-300 mb-1.5">
-                Corporate Email Address
+              <label className="block text-[11px] font-medium text-white/50 mb-1.5 uppercase tracking-wide">
+                Email
               </label>
               <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@indianoil.in"
-                  className="w-full pl-10 pr-4 py-2.5 text-[13px] bg-slate-950/80 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                  className={inputCls}
                 />
               </div>
             </div>
 
-            {/* Password Field */}
             <div>
-              <label className="block text-[11px] font-medium text-slate-300 mb-1.5">
+              <label className="block text-[11px] font-medium text-white/50 mb-1.5 uppercase tracking-wide">
                 Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••••••"
-                  className="w-full pl-10 pr-10 py-2.5 text-[13px] bg-slate-950/80 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                  placeholder="••••••••••"
+                  className={inputCls + ' pr-10'}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
             </div>
 
-            {/* Registration Specific Fields */}
             {mode === 'register' && (
               <>
                 <div>
-                  <label className="block text-[11px] font-medium text-slate-300 mb-1.5">
+                  <label className="block text-[11px] font-medium text-white/50 mb-1.5 uppercase tracking-wide">
                     Confirm Password
                   </label>
                   <div className="relative">
-                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
                     <input
                       type={showPassword ? 'text' : 'password'}
                       required
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="••••••••••••"
-                      className="w-full pl-10 pr-4 py-2.5 text-[13px] bg-slate-950/80 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                      placeholder="••••••••••"
+                      className={inputCls}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-medium text-slate-300 mb-1.5">
+                  <label className="block text-[11px] font-medium text-white/50 mb-1.5 uppercase tracking-wide">
                     Operational Role
                   </label>
                   <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setRole('hse')}
-                      className={`p-2.5 rounded-xl border text-left transition-all ${
-                        role === 'hse'
-                          ? 'bg-blue-600/20 border-blue-500 text-white'
-                          : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700'
-                      }`}
-                    >
-                      <div className="text-[12px] font-bold">HSE Officer</div>
-                      <div className="text-[10px] text-slate-400">Auditor & Command</div>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setRole('reporter')}
-                      className={`p-2.5 rounded-xl border text-left transition-all ${
-                        role === 'reporter'
-                          ? 'bg-emerald-600/20 border-emerald-500 text-white'
-                          : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700'
-                      }`}
-                    >
-                      <div className="text-[12px] font-bold">Field Reporter</div>
-                      <div className="text-[10px] text-slate-400">Incident Logging</div>
-                    </button>
+                    {[
+                      { r: 'hse' as UserRole, label: 'HSE Manager', sub: 'Full Access' },
+                      { r: 'reporter' as UserRole, label: 'Field Reporter', sub: 'Reporting Only' },
+                    ].map(({ r, label, sub }) => (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => setRole(r)}
+                        className="p-3 rounded-xl text-left transition-all"
+                        style={{
+                          background: role === r ? 'rgba(232,101,10,0.15)' : 'rgba(255,255,255,0.03)',
+                          border: `1px solid ${role === r ? 'rgba(232,101,10,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                        }}
+                      >
+                        <div className="text-[12px] font-bold text-white/80">{label}</div>
+                        <div className="text-[10px] text-white/30 mt-0.5">{sub}</div>
+                      </button>
+                    ))}
                   </div>
                 </div>
               </>
             )}
 
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={submitting || isLoading}
-              className="w-full mt-2 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-[13px] text-white transition-all shadow-lg hover:brightness-110 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed"
-              style={{
-                background: 'linear-gradient(135deg, #1B3A6B 0%, #2563EB 100%)',
-                boxShadow: '0 4px 14px rgba(37,99,235,0.3)',
-              }}
+              className="w-full mt-2 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-[13px] text-white transition-all hover:brightness-110 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ background: 'var(--color-orange-brand)' }}
             >
               {submitting ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>{mode === 'login' ? 'Authenticating...' : 'Registering...'}</span>
+                  <span>{mode === 'login' ? 'Signing In…' : 'Creating Account…'}</span>
                 </>
               ) : (
                 <>
-                  <span>{mode === 'login' ? 'Access Command System' : 'Create & Sign In'}</span>
+                  <span>{mode === 'login' ? 'Access Platform' : 'Create Account'}</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
             </button>
           </form>
         </div>
-
-
       </div>
     </div>
   );

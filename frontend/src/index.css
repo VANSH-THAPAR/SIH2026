@@ -1,14 +1,52 @@
 @import "tailwindcss";
 
 @theme {
-  --color-ink: #111111;
-  --color-canvas: #FFFFFF;
-  --color-soft-cloud: #F5F5F5;
-  --color-hairline: #E5E5E5;
-  --color-mute: #707070;
-  --color-sale: #9E3500;
+  /* ─── Brand ─── */
+  --color-orange-brand: #E8650A;
+  --color-orange-light: #FEF0E6;
+  --color-orange-mid: #FBD9BC;
 
-  --font-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  /* ─── Surfaces ─── */
+  --color-surface: #F7F6F3;
+  --color-surface-elevated: #FFFFFF;
+  --color-surface-subtle: #F0EFEc;
+
+  /* ─── Text ─── */
+  --color-text-primary: #1C1B18;
+  --color-text-secondary: #65635E;
+  --color-text-tertiary: #A39F9A;
+
+  /* ─── Borders ─── */
+  --color-border: #E4E1DB;
+  --color-border-strong: #C8C4BC;
+
+  /* ─── Semantic risk colors ─── */
+  --color-critical: #C41E3A;
+  --color-critical-bg: #FFF0F0;
+  --color-critical-border: #FEC5C5;
+
+  --color-high: #C44B0A;
+  --color-high-bg: #FEF3EA;
+  --color-high-border: #FAC89A;
+
+  --color-medium: #8A6200;
+  --color-medium-bg: #FEF8E7;
+  --color-medium-border: #F5D87A;
+
+  --color-low: #1A7050;
+  --color-low-bg: #EDFAF5;
+  --color-low-border: #9EDED1;
+
+  --color-success: #1A7050;
+  --color-success-bg: #EDFAF5;
+
+  --color-info: #1A5EA8;
+  --color-info-bg: #EEF4FD;
+  --color-info-border: #B3D0F5;
+
+  /* ─── Typography ─── */
+  --font-sans: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
 }
 
 @layer base {
@@ -23,10 +61,11 @@
     margin: 0;
     padding: 0;
     width: 100%;
-    background-color: var(--color-canvas);
-    color: var(--color-ink);
+    background-color: var(--color-surface);
+    color: var(--color-text-primary);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   #root {
@@ -36,66 +75,70 @@
 
   h1, h2, h3, h4, h5, h6 {
     margin: 0;
-    font-weight: 500;
-    color: var(--color-ink);
+    color: var(--color-text-primary);
+    line-height: 1.3;
   }
 
   a {
-    color: var(--color-ink);
+    color: inherit;
     text-decoration: none;
-  }
-
-  a:hover {
-    text-decoration: underline;
   }
 
   p {
     margin: 0;
   }
-}
 
-/* Custom Component Classes mapped to Nike */
-@layer components {
-  .btn-primary {
-    @apply bg-ink text-canvas rounded-full px-8 h-12 flex items-center justify-center font-medium transition-transform active:scale-95 hover:opacity-90;
-  }
-  .btn-secondary {
-    @apply bg-soft-cloud text-ink rounded-full px-8 h-12 flex items-center justify-center font-medium transition-transform active:scale-95 hover:bg-hairline;
-  }
-  .btn-icon {
-    @apply bg-soft-cloud text-ink rounded-full w-10 h-10 flex items-center justify-center transition-transform active:scale-95 hover:bg-hairline;
-  }
-  .nike-card {
-    @apply bg-canvas border border-hairline rounded-none p-6;
-  }
-  .nike-input {
-    @apply bg-soft-cloud text-ink rounded-full px-6 h-12 border-none outline-none focus:ring-1 focus:ring-ink w-full;
-  }
-  .nike-tab {
-    @apply text-mute hover:text-ink pb-2 border-b-2 border-transparent font-medium whitespace-nowrap transition-colors;
-  }
-  .nike-tab-active {
-    @apply text-ink border-ink font-medium pb-2 border-b-2 whitespace-nowrap;
+  button {
+    cursor: pointer;
   }
 }
 
-/* Scrollbar */
+/* ─── Scrollbar ─────────────────────────────────────────────── */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--color-canvas);
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--color-hairline);
+  background: var(--color-border-strong);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-mute);
+  background: var(--color-text-tertiary);
 }
 
+/* ─── ReactFlow overrides ─────────────────────────────────── */
 .react-flow__node {
-  font-size: 12px;
-  border-radius: 0 !important;
+  font-size: 11px;
+  font-family: var(--font-sans);
+}
+.react-flow__attribution {
+  display: none;
+}
+
+/* ─── Animations ─────────────────────────────────────────── */
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-skeleton {
+  animation: skeleton-pulse 1.6s ease-in-out infinite;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.15s ease-out;
+}
+
+/* ─── Focus visible ──────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--color-orange-brand);
+  outline-offset: 2px;
 }

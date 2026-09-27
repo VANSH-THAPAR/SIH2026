@@ -5,12 +5,10 @@ import {
   BarChart3,
   FileText,
   Download,
-  Calendar,
-  ChevronDown,
+  Activity,
   TrendingUp,
   AlertTriangle,
   ShieldCheck,
-  Activity,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -24,30 +22,37 @@ import {
   Pie,
   Legend,
 } from 'recharts';
+import { ErrorState } from '@/components/ui/Toast';
 
 const PRIORITY_COLORS: Record<string, string> = {
-  CRITICAL: '#DC2626',
-  HIGH: '#EA580C',
-  MEDIUM: '#D97706',
-  LOW: '#16A34A',
+  CRITICAL: 'var(--color-critical)',
+  HIGH: 'var(--color-high)',
+  MEDIUM: 'var(--color-medium)',
+  LOW: 'var(--color-low)',
 };
 
-const EXPOSURE_COLORS = ['#DC2626', '#EA580C', '#D97706', '#94A3B8'];
+const EXPOSURE_COLORS = [
+  'var(--color-critical)',
+  'var(--color-high)',
+  'var(--color-medium)',
+  'var(--color-border-strong)',
+];
 
 export function ReportsPage() {
   const [activeTab, setActiveTab] = useState<'summary' | 'facility' | 'barrier'>('summary');
 
-  const { data: kpis, isLoading: kpiLoading } = useQuery({
+  const { data: kpis, isLoading: kpiLoading, isError: kpiError } = useQuery({
     queryKey: ['dashboard', 'summary'],
     queryFn: fetchDashboardKPIs,
   });
 
-  const { data: trends, isLoading: trendsLoading } = useQuery({
+  const { data: trends, isLoading: trendsLoading, isError: trendsError } = useQuery({
     queryKey: ['dashboard', 'trends'],
     queryFn: fetchDashboardTrends,
   });
 
   const isLoading = kpiLoading || trendsLoading;
+  const isError = kpiError || trendsError;
 
   const priorityData = trends?.priority_distribution ?? [];
   const exposureData = trends?.exposure_distribution?.map((d: any, i: number) => ({
@@ -60,27 +65,53 @@ export function ReportsPage() {
     ?.sort((a: any, b: any) => b.failure_rate - a.failure_rate)
     .slice(0, 8) ?? [];
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-2 border-slate-200 border-t-blue-600 rounded-full animate-spin" />
+  if (isLoading) return (
+    <div className="flex flex-col min-h-full p-7 space-y-6 max-w-[1600px] mx-auto animate-skeleton" style={{ background: 'var(--color-surface)' }}>
+      <div className="flex items-start justify-between">
+        <div>
+          <div className="h-6 w-48 bg-[var(--color-border)] rounded mb-1" />
+          <div className="h-3 w-64 bg-[var(--color-surface-subtle)] rounded" />
+        </div>
+        <div className="h-8 w-32 bg-[var(--color-border)] rounded-xl" />
       </div>
-    );
-  }
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="bg-white border border-[var(--color-border)] rounded-xl p-5">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-9 h-9 rounded-xl bg-[var(--color-surface-subtle)]" />
+              <div>
+                <div className="h-3 w-24 bg-[var(--color-surface-subtle)] rounded mb-1" />
+                <div className="h-2 w-16 bg-[var(--color-surface-subtle)] rounded" />
+              </div>
+            </div>
+            <div className="h-8 w-16 bg-[var(--color-border)] rounded" />
+          </div>
+        ))}
+      </div>
+      <div className="bg-white border border-[var(--color-border)] rounded-xl shadow-sm overflow-hidden h-[400px]">
+        <div className="p-4 border-b border-[var(--color-border)] bg-[var(--color-surface)] h-[55px]" />
+        <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="h-[220px] bg-[var(--color-surface-subtle)] rounded-xl" />
+          <div className="h-[220px] bg-[var(--color-surface-subtle)] rounded-xl" />
+        </div>
+      </div>
+    </div>
+  );
+  if (isError) return <ErrorState message="Failed to load reports data." />;
 
   return (
-    <div className="flex flex-col min-h-full bg-[#F4F5F9] p-7 space-y-6">
+    <div className="flex flex-col min-h-full p-7 space-y-6 max-w-[1600px] mx-auto" style={{ background: 'var(--color-surface)' }}>
       {/* ─── Header ──────────────────────────────────────────────────────────── */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">QISD Audits & Reports</h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <h1 className="text-[22px] font-bold text-[var(--color-text-primary)] tracking-tight">QISD Audits & Reports</h1>
+          <p className="text-[13px] text-[var(--color-text-secondary)] mt-0.5">
             Comprehensive safety reporting, analytics and audit trails
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-2xl text-[12px] font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition-colors">
-            <Download className="w-3.5 h-3.5 text-slate-500" />
+          <button className="flex items-center gap-2 px-4 py-2 bg-white border border-[var(--color-border)] rounded-xl text-[12px] font-semibold text-[var(--color-text-primary)] shadow-sm hover:border-[var(--color-border-strong)] transition-colors">
+            <Download className="w-3.5 h-3.5 text-[var(--color-text-tertiary)]" />
             Export All Reports
           </button>
         </div>
@@ -89,35 +120,35 @@ export function ReportsPage() {
       {/* ─── Summary KPI Tiles ─────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total Incidents', value: kpis?.total_reports ?? 0, icon: FileText, iconBg: 'bg-blue-50 text-blue-600 border-blue-100', note: 'All time' },
-          { label: 'SIF Precursors', value: kpis?.sif_potential_count ?? 0, icon: AlertTriangle, iconBg: 'bg-rose-50 text-rose-600 border-rose-100', note: 'High-risk incidents' },
-          { label: 'Critical Count', value: kpis?.critical_count ?? 0, icon: TrendingUp, iconBg: 'bg-red-50 text-red-600 border-red-100', note: 'Priority level' },
-          { label: 'Failed Barriers', value: kpis?.failed_barriers ?? 0, icon: ShieldCheck, iconBg: 'bg-amber-50 text-amber-600 border-amber-100', note: 'Control failures' },
+          { label: 'Total Incidents', value: kpis?.total_reports ?? 0, icon: FileText, iconBg: 'var(--color-info-bg)', color: 'var(--color-info)', note: 'All time' },
+          { label: 'SIF Precursors', value: kpis?.sif_potential_count ?? 0, icon: AlertTriangle, iconBg: 'var(--color-critical-bg)', color: 'var(--color-critical)', note: 'High-risk incidents' },
+          { label: 'Critical Count', value: kpis?.critical_count ?? 0, icon: TrendingUp, iconBg: 'var(--color-orange-light)', color: 'var(--color-orange-brand)', note: 'Priority level' },
+          { label: 'Failed Barriers', value: kpis?.failed_barriers ?? 0, icon: ShieldCheck, iconBg: 'var(--color-medium-bg)', color: 'var(--color-medium)', note: 'Control failures' },
         ].map((card) => {
           const Icon = card.icon;
           return (
             <div
               key={card.label}
-              className={`bg-white border border-slate-200/70 rounded-2xl p-5 shadow-[0_2px_10px_-2px_rgba(0,0,0,0.03)]`}
+              className="bg-white border border-[var(--color-border)] rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow"
             >
               <div className="flex items-center gap-3 mb-3">
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center border ${card.iconBg}`}>
-                  <Icon className="w-4 h-4" />
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center border border-[var(--color-border)]" style={{ background: card.iconBg }}>
+                  <Icon className="w-4 h-4" style={{ color: card.color }} />
                 </div>
                 <div>
-                  <h3 className="text-xs font-semibold text-slate-600">{card.label}</h3>
-                  <p className="text-[10px] text-slate-400">{card.note}</p>
+                  <h3 className="text-[11.5px] font-semibold text-[var(--color-text-secondary)]">{card.label}</h3>
+                  <p className="text-[10px] text-[var(--color-text-tertiary)]">{card.note}</p>
                 </div>
               </div>
-              <div className="text-2xl font-bold text-slate-900">{card.value.toLocaleString()}</div>
+              <div className="text-2xl font-bold text-[var(--color-text-primary)]">{card.value.toLocaleString()}</div>
             </div>
           );
         })}
       </div>
 
       {/* ─── Tab Nav ─────────────────────────────────────────────────────────── */}
-      <div className="bg-white border border-slate-200/70 rounded-2xl shadow-[0_2px_10px_-2px_rgba(0,0,0,0.03)] overflow-hidden">
-        <div className="flex items-center gap-1 p-4 border-b border-slate-100 bg-slate-50/80">
+      <div className="bg-white border border-[var(--color-border)] rounded-xl shadow-sm overflow-hidden">
+        <div className="flex items-center gap-1 p-4 border-b border-[var(--color-border)] bg-[var(--color-surface)]">
           {[
             { key: 'summary', label: 'Priority & Exposure', icon: Activity },
             { key: 'facility', label: 'Facility Risk Report', icon: BarChart3 },
@@ -128,10 +159,10 @@ export function ReportsPage() {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key as any)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[12px] font-semibold transition-all ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[12px] font-semibold transition-all ${
                   activeTab === tab.key
-                    ? 'bg-white text-slate-900 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-700 hover:bg-white/60'
+                    ? 'bg-[var(--color-text-primary)] text-white shadow-sm'
+                    : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-white/60'
                 }`}
               >
                 <Icon className="w-3.5 h-3.5" />
@@ -146,8 +177,8 @@ export function ReportsPage() {
           <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Priority Distribution */}
             <div>
-              <h3 className="font-bold text-slate-800 text-[14px] mb-1">Priority Distribution</h3>
-              <p className="text-[12px] text-slate-400 mb-4">Incidents by SIF severity tier</p>
+              <h3 className="font-bold text-[var(--color-text-primary)] text-[14px] mb-1">Priority Distribution</h3>
+              <p className="text-[12px] text-[var(--color-text-secondary)] mb-4">Incidents by SIF severity tier</p>
               <div className="h-[220px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
@@ -155,20 +186,20 @@ export function ReportsPage() {
                     layout="vertical"
                     margin={{ top: 5, right: 30, left: 60, bottom: 5 }}
                   >
-                    <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94A3B8' }} />
+                    <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'var(--color-text-tertiary)' }} />
                     <YAxis
                       dataKey="priority"
                       type="category"
                       axisLine={false}
                       tickLine={false}
-                      tick={{ fontSize: 11, fill: '#64748B' }}
+                      tick={{ fontSize: 11, fill: 'var(--color-text-secondary)' }}
                     />
                     <Tooltip
-                      contentStyle={{ borderRadius: '12px', border: '1px solid #E2E8F0', fontSize: '12px' }}
+                      contentStyle={{ borderRadius: '12px', border: '1px solid var(--color-border)', fontSize: '12px' }}
                     />
                     <Bar dataKey="count" radius={[0, 6, 6, 0]}>
                       {priorityData.map((entry: any) => (
-                        <Cell key={entry.priority} fill={PRIORITY_COLORS[entry.priority] ?? '#94A3B8'} />
+                        <Cell key={entry.priority} fill={PRIORITY_COLORS[entry.priority] ?? 'var(--color-border-strong)'} />
                       ))}
                     </Bar>
                   </BarChart>
@@ -178,8 +209,8 @@ export function ReportsPage() {
 
             {/* Exposure Distribution Donut */}
             <div>
-              <h3 className="font-bold text-slate-800 text-[14px] mb-1">Exposure Classification</h3>
-              <p className="text-[12px] text-slate-400 mb-4">Breakdown by documented exposure status</p>
+              <h3 className="font-bold text-[var(--color-text-primary)] text-[14px] mb-1">Exposure Classification</h3>
+              <p className="text-[12px] text-[var(--color-text-secondary)] mb-4">Breakdown by documented exposure status</p>
               <div className="h-[220px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -198,9 +229,9 @@ export function ReportsPage() {
                     </Pie>
                     <Tooltip
                       formatter={(val: any, name: any) => [`${val}`, name]}
-                      contentStyle={{ borderRadius: '12px', border: '1px solid #E2E8F0', fontSize: '11px' }}
+                      contentStyle={{ borderRadius: '12px', border: '1px solid var(--color-border)', fontSize: '11px' }}
                     />
-                    <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '11px' }} />
+                    <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '11px', color: 'var(--color-text-primary)' }} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -212,32 +243,33 @@ export function ReportsPage() {
         {activeTab === 'facility' && (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-slate-50 border-b border-slate-100">
+              <thead className="bg-[var(--color-surface)] border-b border-[var(--color-border)]">
                 <tr>
-                  <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Site / Facility</th>
-                  <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Total Incidents</th>
-                  <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wide">SIF Potential</th>
-                  <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Avg SIF Score</th>
-                  <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Critical Count</th>
-                  <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Risk Level</th>
+                  <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wide">Site / Facility</th>
+                  <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wide">Total Incidents</th>
+                  <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wide">SIF Potential</th>
+                  <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wide">Avg SIF Score</th>
+                  <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wide">Critical Count</th>
+                  <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wide">Risk Level</th>
                 </tr>
               </thead>
               <tbody>
                 {facilityData.map((fac: any, i: number) => {
-                  const riskLevel = (fac.avg_sif_score ?? fac.avg_score ?? 0) >= 85 ? 'CRITICAL' : (fac.avg_sif_score ?? fac.avg_score ?? 0) >= 70 ? 'HIGH' : (fac.avg_sif_score ?? fac.avg_score ?? 0) >= 50 ? 'MEDIUM' : 'LOW';
+                  const score = fac.avg_sif_score ?? fac.avg_score ?? 0;
+                  const riskLevel = score >= 85 ? 'CRITICAL' : score >= 70 ? 'HIGH' : score >= 50 ? 'MEDIUM' : 'LOW';
                   const riskStyle: Record<string, string> = {
-                    CRITICAL: 'bg-rose-50 text-rose-700 border border-rose-200',
-                    HIGH: 'bg-orange-50 text-orange-700 border border-orange-200',
-                    MEDIUM: 'bg-amber-50 text-amber-700 border border-amber-200',
-                    LOW: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+                    CRITICAL: 'bg-[var(--color-critical-bg)] text-[var(--color-critical)] border border-[var(--color-critical-border)]',
+                    HIGH: 'bg-[var(--color-high-bg)] text-[var(--color-high)] border border-[var(--color-high-border)]',
+                    MEDIUM: 'bg-[var(--color-medium-bg)] text-[var(--color-medium)] border border-[var(--color-medium-border)]',
+                    LOW: 'bg-[var(--color-low-bg)] text-[var(--color-low)] border border-[var(--color-low-border)]',
                   };
                   return (
-                    <tr key={fac.site_name} className={`border-b border-slate-50 hover:bg-blue-50/30 transition-colors ${i % 2 === 0 ? '' : 'bg-slate-50/30'}`}>
-                      <td className="px-5 py-3.5 font-semibold text-slate-800 text-[13px]">{fac.site_name}</td>
-                      <td className="px-5 py-3.5 font-bold text-slate-900 text-[14px]">{fac.total}</td>
-                      <td className="px-5 py-3.5 font-bold text-rose-600 text-[13px]">{fac.sif_potential}</td>
-                      <td className="px-5 py-3.5 font-bold text-slate-800 text-[14px]">{(fac.avg_sif_score ?? fac.avg_score ?? '—')}</td>
-                      <td className="px-5 py-3.5 font-bold text-red-600 text-[13px]">{fac.critical ?? fac.critical_count ?? 0}</td>
+                    <tr key={fac.site_name} className={`border-b border-[var(--color-border)] hover:bg-[var(--color-surface)] transition-colors ${i % 2 === 0 ? '' : 'bg-[var(--color-surface-subtle)]'}`}>
+                      <td className="px-5 py-3.5 font-semibold text-[var(--color-text-primary)] text-[13px]">{fac.site_name}</td>
+                      <td className="px-5 py-3.5 font-bold text-[var(--color-text-primary)] text-[14px]">{fac.total}</td>
+                      <td className="px-5 py-3.5 font-bold text-[var(--color-critical)] text-[13px]">{fac.sif_potential}</td>
+                      <td className="px-5 py-3.5 font-bold text-[var(--color-text-primary)] text-[14px]">{score}</td>
+                      <td className="px-5 py-3.5 font-bold text-[var(--color-critical)] text-[13px]">{fac.critical ?? fac.critical_count ?? 0}</td>
                       <td className="px-5 py-3.5">
                         <span className={`text-[11px] font-bold px-2.5 py-1 rounded-lg ${riskStyle[riskLevel]}`}>{riskLevel}</span>
                       </td>
@@ -253,39 +285,39 @@ export function ReportsPage() {
         {activeTab === 'barrier' && (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-slate-50 border-b border-slate-100">
+              <thead className="bg-[var(--color-surface)] border-b border-[var(--color-border)]">
                 <tr>
-                  <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Barrier Name</th>
-                  <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Type</th>
-                  <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Total Activations</th>
-                  <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Failed</th>
-                  <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Bypassed</th>
-                  <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Failure Rate</th>
+                  <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wide">Barrier Name</th>
+                  <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wide">Type</th>
+                  <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wide">Total Activations</th>
+                  <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wide">Failed</th>
+                  <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wide">Bypassed</th>
+                  <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wide">Failure Rate</th>
                 </tr>
               </thead>
               <tbody>
                 {barrierData.map((b: any, i: number) => (
-                  <tr key={b.barrier_name} className={`border-b border-slate-50 hover:bg-blue-50/30 transition-colors ${i % 2 === 0 ? '' : 'bg-slate-50/30'}`}>
+                  <tr key={b.barrier_name} className={`border-b border-[var(--color-border)] hover:bg-[var(--color-surface)] transition-colors ${i % 2 === 0 ? '' : 'bg-[var(--color-surface-subtle)]'}`}>
                     <td className="px-5 py-3.5">
-                      <div className="font-semibold text-slate-800 text-[13px]">{b.barrier_name}</div>
-                      <div className="text-[10px] text-slate-400 font-mono">{b.barrier_code}</div>
+                      <div className="font-semibold text-[var(--color-text-primary)] text-[13px]">{b.barrier_name}</div>
+                      <div className="text-[10px] text-[var(--color-text-tertiary)] font-mono mt-0.5">{b.barrier_code}</div>
                     </td>
                     <td className="px-5 py-3.5">
-                      <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg">
+                      <span className="text-[11px] font-semibold text-[var(--color-text-secondary)] bg-[var(--color-surface-subtle)] px-2.5 py-1 rounded-lg border border-[var(--color-border)]">
                         {b.barrier_type}
                       </span>
                     </td>
-                    <td className="px-5 py-3.5 font-bold text-slate-800 text-[14px]">{b.total}</td>
-                    <td className="px-5 py-3.5 font-bold text-rose-600 text-[13px]">{b.failed}</td>
-                    <td className="px-5 py-3.5 font-bold text-amber-600 text-[13px]">{b.bypassed}</td>
+                    <td className="px-5 py-3.5 font-bold text-[var(--color-text-primary)] text-[14px]">{b.total}</td>
+                    <td className="px-5 py-3.5 font-bold text-[var(--color-critical)] text-[13px]">{b.failed}</td>
+                    <td className="px-5 py-3.5 font-bold text-[var(--color-high)] text-[13px]">{b.bypassed}</td>
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-2">
-                        <span className={`font-bold text-[13px] ${b.failure_rate > 25 ? 'text-rose-600' : b.failure_rate > 10 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                        <span className={`font-bold text-[13px] ${b.failure_rate > 25 ? 'text-[var(--color-critical)]' : b.failure_rate > 10 ? 'text-[var(--color-medium)]' : 'text-[var(--color-low)]'}`}>
                           {b.failure_rate?.toFixed(1)}%
                         </span>
-                        <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div className="w-16 h-1.5 bg-[var(--color-surface-subtle)] rounded-full overflow-hidden">
                           <div
-                            className={`h-full rounded-full ${b.failure_rate > 25 ? 'bg-rose-500' : b.failure_rate > 10 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                            className={`h-full rounded-full ${b.failure_rate > 25 ? 'bg-[var(--color-critical)]' : b.failure_rate > 10 ? 'bg-[var(--color-medium)]' : 'bg-[var(--color-low)]'}`}
                             style={{ width: `${Math.min(b.failure_rate, 100)}%` }}
                           />
                         </div>

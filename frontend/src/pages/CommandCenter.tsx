@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -9,28 +9,83 @@ import {
   XAxis,
   YAxis,
   Tooltip,
-  PieChart,
-  Pie,
-  Cell,
   AreaChart,
   Area,
+  BarChart,
+  Cell,
 } from 'recharts';
 import {
   Activity,
   AlertTriangle,
-  Zap,
+  ShieldAlert,
   ShieldCheck,
-  CheckSquare,
-  Calendar,
-  Download,
-  MoreHorizontal,
-  ChevronDown,
-  ArrowUpRight,
-  ArrowDownRight,
+  ClipboardList,
+  ArrowRight,
+  RefreshCw,
 } from 'lucide-react';
 import { fetchDashboardKPIs, fetchDashboardTrends } from '../services/api';
 import { LoadingPage } from '../components/ui/LoadingSpinner';
-import { ErrorState } from '../components/ui/ErrorState';
+import { ErrorState, SkeletonCard } from '../components/ui/Toast';
+
+// ─── Tooltip ──────────────────────────────────────────────────────────────────
+
+function ChartTooltip({ active, payload, label }: any) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="bg-white border border-[var(--color-border)] rounded-xl px-3.5 py-2.5 shadow-lg text-[11.5px]">
+      <div className="font-semibold text-[var(--color-text-primary)] mb-1.5">{label}</div>
+      {payload.map((entry: any) => (
+        <div key={entry.name} className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
+            <span className="text-[var(--color-text-secondary)]">{entry.name}</span>
+          </div>
+          <span className="font-bold text-[var(--color-text-primary)]">{entry.value}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── KPI Card ─────────────────────────────────────────────────────────────────
+
+function KPICard({
+  label,
+  value,
+  subtext,
+  accent = false,
+  onClick,
+}: {
+  label: string;
+  value: string | number;
+  subtext?: string;
+  accent?: boolean;
+  onClick?: () => void;
+}) {
+  return (
+    <div
+      onClick={onClick}
+      className={`bg-white border rounded-xl p-5 flex flex-col gap-3 ${onClick ? 'cursor-pointer hover:border-[var(--color-border-strong)] transition-colors group' : ''} ${accent ? 'border-[var(--color-high-border)] bg-[var(--color-high-bg)]' : 'border-[var(--color-border)]'}`}
+    >
+      <div className="text-[11.5px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
+        {label}
+      </div>
+      <div className={`text-3xl font-bold tracking-tight ${accent ? 'text-[var(--color-high)]' : 'text-[var(--color-text-primary)]'}`}>
+        {value}
+      </div>
+      {subtext && (
+        <div className="text-[11px] text-[var(--color-text-tertiary)]">{subtext}</div>
+      )}
+      {onClick && (
+        <div className="flex items-center gap-1 text-[11px] font-semibold text-[var(--color-orange-brand)] opacity-0 group-hover:opacity-100 transition-opacity">
+          View details <ArrowRight className="w-3 h-3" />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Main ─────────────────────────────────────────────────────────────────────
 
 export function CommandCenter() {
   const navigate = useNavigate();
@@ -47,606 +102,310 @@ export function CommandCenter() {
     refetchInterval: 60000,
   });
 
+  const kpi = kpiQuery.data;
   const trends = trendQuery.data;
 
-  // Category distribution data (Donut / Polar chart with pastel slices)
-  const categoryPalette = ['#3B82F6', '#8B5CF6', '#F97316', '#06B6D4', '#EC4899'];
-  const categoryData = useMemo(() => {
-    if (trends?.activity_hotspots && trends.activity_hotspots.length > 0) {
-      const top4 = trends.activity_hotspots.slice(0, 4);
-      const otherTotal = trends.activity_hotspots
-        .slice(4)
-        .reduce((acc, curr) => acc + (curr.total ?? curr.count ?? 0), 0);
-      const totalAll =
-        trends.activity_hotspots.reduce((acc, curr) => acc + (curr.total ?? curr.count ?? 0), 0) || 1;
-
-      const items = top4.map((h, i) => {
-        const val = h.total ?? h.count ?? 0;
-        return {
-          name: h.activity,
-          value: val,
-          percentage: Math.round((val / totalAll) * 100),
-          color: categoryPalette[i % categoryPalette.length],
-        };
-      });
-
-      if (otherTotal > 0) {
-        items.push({
-          name: 'Others',
-          value: otherTotal,
-          percentage: Math.max(1, 100 - items.reduce((acc, it) => acc + it.percentage, 0)),
-          color: categoryPalette[4],
-        });
-      }
-      return items;
-    }
-
-    return [
-      { name: 'Pipeline Maintenance', value: 136, percentage: 40, color: '#3B82F6' },
-      { name: 'Lifting Operations', value: 81, percentage: 24, color: '#8B5CF6' },
-      { name: 'General Operations', value: 73, percentage: 18, color: '#F97316' },
-      { name: 'Hot Work', value: 30, percentage: 10, color: '#06B6D4' },
-      { name: 'Others', value: 27, percentage: 8, color: '#EC4899' },
-    ];
+  // Build monthly trend data from real API (trends.monthly_trend)
+  const monthlyData = useMemo(() => {
+    if (!trends?.monthly_trend?.length) return [];
+    return trends.monthly_trend.map((m) => ({
+      month: m.month,
+      'Total Incidents': m.total,
+      'SIF Precursors': m.sif_potential,
+      Critical: m.critical,
+    }));
   }, [trends]);
 
-  // Top facilities / sites (Styled like "Top Spending merchants" in screenshot)
-  const facilityProgressColors = ['#10B981', '#F97316', '#8B5CF6', '#3B82F6'];
-  const topFacilities = useMemo(() => {
-    if (trends?.facility_risk && trends.facility_risk.length > 0) {
-      const maxVal = Math.max(...trends.facility_risk.slice(0, 4).map((f) => f.total)) || 1;
-      return trends.facility_risk.slice(0, 4).map((f, i) => ({
-        id: f.site_name,
-        name: f.site_name,
-        count: f.total,
-        percentage: Math.round((f.total / maxVal) * 100),
-        color: facilityProgressColors[i % facilityProgressColors.length],
-        initials: f.site_name.slice(0, 2).toUpperCase(),
-      }));
-    }
-    return [
-      { id: '1', name: 'Duliajan Central Field', count: 82, percentage: 80, color: '#10B981', initials: 'DU' },
-      { id: '2', name: 'Baghewala Exploration', count: 44, percentage: 70, color: '#F97316', initials: 'BA' },
-      { id: '3', name: 'Kakinada Deepwater', count: 41, percentage: 60, color: '#8B5CF6', initials: 'KA' },
-      { id: '4', name: 'Tengakhat Production', count: 38, percentage: 52, color: '#3B82F6', initials: 'TE' },
-    ];
+  // Facility risk data from real API
+  const facilityData = useMemo(() => {
+    if (!trends?.facility_risk?.length) return [];
+    const maxTotal = Math.max(...trends.facility_risk.map((f) => f.total)) || 1;
+    return trends.facility_risk.slice(0, 6).map((f) => ({
+      name: f.site_name.length > 18 ? f.site_name.slice(0, 16) + '…' : f.site_name,
+      total: f.total,
+      sif: f.sif_potential,
+      pct: Math.round((f.total / maxTotal) * 100),
+    }));
   }, [trends]);
 
-  // Export report to CSV
-  const handleExportReport = () => {
-    if (!kpiQuery.data) return;
-    const kpi = kpiQuery.data;
-    const csvRows = [
-      ['Metric', 'Value'],
-      ['Total Reports', kpi.total_reports],
-      ['SIF Potential Count', kpi.sif_potential_count],
-      ['Critical Priority Count', kpi.critical_count],
-      ['High Priority Count', kpi.high_count],
-      ['Documented Exposure', kpi.documented_exposure],
-      ['Potential Exposure', kpi.potential_exposure],
-      ['Average SIF Score', kpi.avg_sif_score],
-      ['Total Barrier Mappings', kpi.total_barrier_mappings],
-      ['Failed Barriers', kpi.failed_barriers],
-      ['LSR Mappings', kpi.lsr_mappings],
-    ];
+  // Score distribution from real API
+  const scoreDistData = useMemo(() => {
+    if (!trends?.sif_score_distribution?.length) return [];
+    return trends.sif_score_distribution.map((d) => ({
+      range: d.range,
+      count: d.count,
+    }));
+  }, [trends]);
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + csvRows.map((e) => e.join(',')).join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `SIF_Command_Center_Report_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  // Priority distribution colors
+  const PRIORITY_COLORS: Record<string, string> = {
+    CRITICAL: 'var(--color-critical)',
+    HIGH: 'var(--color-high)',
+    MEDIUM: 'var(--color-medium)',
+    LOW: 'var(--color-low)',
   };
 
-  if (kpiQuery.isLoading) return <LoadingPage />;
-  if (kpiQuery.isError) return <ErrorState onRetry={() => kpiQuery.refetch()} />;
+  const lastUpdated = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
 
-  const kpi = kpiQuery.data!;
-
-  // Metric cards definitions mirroring the screenshot
-  const kpiCards = [
-    {
-      id: 'total-reports',
-      label: 'Total Incidents',
-      value: kpi.total_reports || 454,
-      displayValue: (kpi.total_reports || 454).toLocaleString(),
-      icon: Activity,
-      iconBg: 'bg-blue-50 text-blue-600 border border-blue-100',
-      link: '/incidents',
-    },
-    {
-      id: 'sif-potential',
-      label: 'SIF Precursors',
-      value: kpi.sif_potential_count || 373,
-      displayValue: (kpi.sif_potential_count || 373).toLocaleString(),
-      icon: AlertTriangle,
-      iconBg: 'bg-emerald-50 text-emerald-600 border border-emerald-100',
-      link: '/sif',
-    },
-    {
-      id: 'critical-hazards',
-      label: 'Critical Hazards',
-      value: kpi.critical_count || 289,
-      displayValue: (kpi.critical_count || 289).toLocaleString(),
-      icon: Zap,
-      iconBg: 'bg-rose-50 text-rose-600 border border-rose-100',
-      link: '/incidents?priority=CRITICAL',
-    },
-    {
-      id: 'barrier-health',
-      label: 'Barrier Integrity',
-      value: `${(
-        ((kpi.total_barrier_mappings - kpi.failed_barriers) / (kpi.total_barrier_mappings || 1)) *
-        100
-      ).toFixed(1)}%`,
-      displayValue: `${(
-        ((kpi.total_barrier_mappings - kpi.failed_barriers) / (kpi.total_barrier_mappings || 1)) *
-        100
-      ).toFixed(1)}%`,
-      icon: ShieldCheck,
-      iconBg: 'bg-amber-50 text-amber-600 border border-amber-100',
-      link: '/controls',
-    },
-    {
-      id: 'safety-actions',
-      label: 'Safety Actions',
-      value: kpi.open_actions || 56,
-      displayValue: (kpi.open_actions || 56).toString(),
-      icon: CheckSquare,
-      iconBg: 'bg-purple-50 text-purple-600 border border-purple-100',
-      link: '/actions',
-    },
-  ];
-
-  // Month-by-month dual-curve overview data matching screenshot line contours
-  const balanceOverviewData = [
-    { month: 'Jan', total: 42, sif: 33, volume: 18 },
-    { month: 'Feb', total: 45, sif: 36, volume: 22 },
-    { month: 'Mar', total: 48, sif: 39, volume: 28 },
-    { month: 'Apr', total: 38, sif: 31, volume: 20 },
-    { month: 'May', total: 52, sif: 44, volume: 34 },
-    { month: 'Jun', total: 49, sif: 40, volume: 26 },
-    { month: 'Jul', total: 43, sif: 35, volume: 24 },
-    { month: 'Aug', total: 56, sif: 47, volume: 30 },
-    { month: 'Sep', total: 54, sif: 43, volume: 27 },
-    { month: 'Oct', total: 58, sif: 49, volume: 32 },
-    { month: 'Nov', total: 63, sif: 52, volume: 36 },
-    { month: 'Dec', total: 60, sif: 50, volume: 31 },
-  ];
-
-
-  // Cash Flow / SIF Event Frequency Trend (Bottom right card with peaks)
-  const frequencyTrendData = [
-    { period: 'Jan', count: 1 },
-    { period: 'Jan 15', count: 1 },
-    { period: 'Feb 1', count: 18 },
-    { period: 'Feb 10', count: 1 },
-    { period: 'Feb 20', count: 5 },
-    { period: 'Mar 1', count: 15 },
-    { period: 'Mar 12', count: 42, isPeak: true },
-    { period: 'Mar 20', count: 4 },
-    { period: 'Apr 1', count: 22 },
-    { period: 'Apr 15', count: 2 },
-    { period: 'May 1', count: 38 },
-    { period: 'May 15', count: 3 },
-    { period: 'May 28', count: 14 },
-    { period: 'Jun', count: 2 },
-  ];
-
-  // Custom tooltip for Balance Overview line chart matching screenshot floating card
-  const CustomOverviewTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white px-4 py-3 rounded-2xl shadow-[0_12px_30px_-6px_rgba(0,0,0,0.15)] border border-slate-100 min-w-[170px] animate-fade-in">
-          <p className="text-xs font-semibold text-slate-800 mb-2">{label} 2026</p>
-          <div className="space-y-1.5 text-xs">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-[#F97316]" />
-                <span className="text-slate-500 font-medium">SIF Precursors</span>
-              </div>
-              <span className="font-bold text-slate-900">{payload[0]?.value}</span>
-            </div>
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-[#3B82F6]" />
-                <span className="text-slate-500 font-medium">Total Incidents</span>
-              </div>
-              <span className="font-bold text-slate-900">{payload[1]?.value}</span>
-            </div>
+  if (kpiQuery.isLoading) return (
+    <div className="p-7 space-y-6 max-w-[1600px] mx-auto animate-skeleton">
+      <div className="flex items-start justify-between">
+        <div>
+          <div className="h-6 w-40 bg-[var(--color-border)] rounded mb-1" />
+          <div className="h-3 w-64 bg-[var(--color-surface-subtle)] rounded" />
+        </div>
+        <div className="h-4 w-24 bg-[var(--color-surface-subtle)] rounded" />
+      </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="bg-white border border-[var(--color-border)] rounded-xl p-5 flex flex-col gap-3">
+            <div className="h-3 w-20 bg-[var(--color-surface-subtle)] rounded" />
+            <div className="h-8 w-16 bg-[var(--color-border)] rounded" />
+            <div className="h-2 w-24 bg-[var(--color-surface-subtle)] rounded" />
           </div>
-        </div>
-      );
-    }
-    return null;
-  };
+        ))}
+      </div>
+      <div className="grid grid-cols-3 lg:grid-cols-6 gap-3">
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <div key={i} className="bg-white border border-[var(--color-border)] rounded-xl p-4">
+            <div className="h-2 w-16 bg-[var(--color-surface-subtle)] rounded mb-2" />
+            <div className="h-6 w-12 bg-[var(--color-border)] rounded mb-2" />
+            <div className="h-2 w-20 bg-[var(--color-surface-subtle)] rounded" />
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <div className="lg:col-span-8 bg-white border border-[var(--color-border)] rounded-xl p-6 h-[320px]" />
+        <div className="lg:col-span-4 bg-white border border-[var(--color-border)] rounded-xl p-6 h-[320px]" />
+      </div>
+    </div>
+  );
+  if (kpiQuery.isError) return <ErrorState onRetry={() => kpiQuery.refetch()} message="Failed to load dashboard data." />;
 
-  // Custom tooltip for Area spike chart
-  const CustomTrendTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white px-3 py-2 rounded-xl shadow-lg border border-slate-100 text-xs">
-          <span className="text-slate-400">{label}:</span>{' '}
-          <span className="font-bold text-slate-800">{payload[0].value} SIFs</span>
-        </div>
-      );
-    }
-    return null;
-  };
+  const barrierIntegrity =
+    kpi && kpi.total_barrier_mappings > 0
+      ? (((kpi.total_barrier_mappings - kpi.failed_barriers) / kpi.total_barrier_mappings) * 100).toFixed(1)
+      : '—';
 
   return (
-    <div className="p-6 md:p-8 space-y-6 max-w-[1600px] mx-auto min-h-screen text-slate-800 font-sans">
-      {/* ─── Top Header Section ────────────────────────────────────────────── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="p-7 space-y-6 max-w-[1600px] mx-auto">
+      {/* ── Header ──────────────────────────────────────────────────────────── */}
+      <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900">
+          <h1 className="text-[22px] font-bold text-[var(--color-text-primary)] tracking-tight">
             Command Center
           </h1>
-          <p className="text-xs md:text-sm text-slate-500 mt-1 font-normal">
-            Track safety performance, SIF precursors, and barrier integrity
+          <p className="text-[13px] text-[var(--color-text-secondary)] mt-0.5">
+            Safety performance, SIF precursors, and barrier integrity
           </p>
         </div>
-
-        <div className="flex items-center gap-3">
-          {/* Export Report Pill */}
-          <button
-            type="button"
-            onClick={handleExportReport}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200/90 rounded-2xl text-xs font-semibold text-slate-800 shadow-sm hover:bg-slate-50 hover:border-slate-300 transition-all cursor-pointer"
-          >
-            <Download className="w-3.5 h-3.5 text-slate-600" />
-            <span>Export Report</span>
-          </button>
+        <div className="flex items-center gap-2 text-[11px] text-[var(--color-text-tertiary)]">
+          <RefreshCw className="w-3 h-3" />
+          <span>Updated {lastUpdated}</span>
         </div>
       </div>
 
-      {/* ─── 5 KPI Metric Cards Row ───────────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        {kpiCards.map((card) => {
-          const Icon = card.icon;
-          return (
-            <div
-              key={card.id}
-              onClick={() => navigate(card.link)}
-              className="bg-white border border-slate-200/70 rounded-2xl p-5 shadow-[0_2px_10px_-2px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_20px_-4px_rgba(0,0,0,0.06)] hover:border-slate-300 transition-all cursor-pointer group flex flex-col justify-between"
-            >
-              {/* Card Header: Icon, Label, and Options */}
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-9 h-9 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105 ${card.iconBg}`}
-                  >
-                    <Icon className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h3 className="text-xs font-semibold text-slate-800 group-hover:text-blue-600 transition-colors">
-                      {card.label}
-                    </h3>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={(e) => e.stopPropagation()}
-                  className="text-slate-300 hover:text-slate-600 p-1 transition-colors"
-                >
-                  <MoreHorizontal className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Card Footer: Value and Percentage Pill */}
-              <div className="flex items-baseline justify-between mt-5">
-                <span className="text-2xl font-bold tracking-tight text-slate-900">
-                  {card.displayValue}
-                </span>
-              </div>
-            </div>
-          );
-        })}
+      {/* ── KPI Row ─────────────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <KPICard
+          label="Total Incidents"
+          value={kpi?.total_reports?.toLocaleString() ?? '—'}
+          subtext="All processed reports"
+          onClick={() => navigate('/incidents')}
+        />
+        <KPICard
+          label="SIF Precursors"
+          value={kpi?.sif_potential_count?.toLocaleString() ?? '—'}
+          subtext={`Avg score ${kpi?.avg_sif_score?.toFixed(1) ?? '—'}`}
+          accent
+          onClick={() => navigate('/sif')}
+        />
+        <KPICard
+          label="Critical Priority"
+          value={kpi?.critical_count ?? '—'}
+          subtext={`${kpi?.high_count ?? '—'} high priority`}
+          onClick={() => navigate('/incidents?priority=CRITICAL')}
+        />
+        <KPICard
+          label="Open Actions"
+          value={kpi?.open_actions ?? '—'}
+          subtext={kpi?.overdue_actions ? `${kpi.overdue_actions} overdue` : undefined}
+        />
       </div>
 
-      {/* ─── Middle Row: Incident Overview (60%) + Category Donut (40%) ───── */}
+      {/* ── Secondary KPIs ──────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-3 lg:grid-cols-6 gap-3">
+        {[
+          { label: 'Barrier Integrity', value: `${barrierIntegrity}%`, sub: `${kpi?.failed_barriers ?? '—'} failed` },
+          { label: 'Failed Barriers', value: kpi?.failed_barriers ?? '—', sub: `of ${kpi?.total_barrier_mappings ?? '—'} mapped` },
+          { label: 'LSR Mappings', value: kpi?.lsr_mappings ?? '—', sub: 'Life-saving rules' },
+          { label: 'Documented Exposure', value: kpi?.documented_exposure ?? '—', sub: 'Confirmed contact' },
+          { label: 'Near Misses', value: kpi?.near_miss_exposure ?? '—', sub: 'Potential contact' },
+          { label: 'Non-SIF Count', value: kpi?.non_sif_count ?? '—', sub: 'Classified safe' },
+        ].map(({ label, value, sub }) => (
+          <div key={label} className="bg-white border border-[var(--color-border)] rounded-xl p-4">
+            <div className="text-[10.5px] font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wide mb-1.5">
+              {label}
+            </div>
+            <div className="text-xl font-bold text-[var(--color-text-primary)]">{value}</div>
+            <div className="text-[10.5px] text-[var(--color-text-tertiary)] mt-0.5">{sub}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Charts Row ──────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        {/* Left Card: Incident & SIF Velocity Overview (Dual Splines + Volume Bars) */}
-        <div className="lg:col-span-8 bg-white border border-slate-200/70 rounded-2xl p-6 shadow-[0_2px_10px_-2px_rgba(0,0,0,0.03)] flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-base font-bold text-slate-900">Incident & Velocity Overview</h2>
-              <p className="text-xs text-slate-400 mt-0.5">Dual-stream volume & SIF severity progression</p>
+        {/* Monthly Trend — 8 cols */}
+        <div className="lg:col-span-8 bg-white border border-[var(--color-border)] rounded-xl p-6">
+          <div className="mb-5">
+            <h2 className="text-[14px] font-bold text-[var(--color-text-primary)]">
+              Monthly Incident Trend
+            </h2>
+            <p className="text-[11.5px] text-[var(--color-text-tertiary)] mt-0.5">
+              Total incidents vs SIF precursors by month
+            </p>
+          </div>
+          {monthlyData.length === 0 ? (
+            <div className="h-56 flex items-center justify-center text-[12px] text-[var(--color-text-tertiary)]">
+              No trend data available yet
             </div>
-          </div>
-
-          {/* Chart Container */}
-          <div className="h-[280px] w-full mt-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart
-                data={balanceOverviewData}
-                margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
-              >
-                <XAxis
-                  dataKey="month"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 11, fill: '#94A3B8' }}
-                  dy={6}
-                />
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 10, fill: '#94A3B8' }}
-                  domain={[0, 80]}
-                  tickFormatter={(val) => `${val}`}
-                />
-                <Tooltip content={<CustomOverviewTooltip />} />
-
-                {/* Subtle base histogram volume bars mirroring the screenshot */}
-                <Bar
-                  dataKey="volume"
-                  fill="#F1F5F9"
-                  radius={[3, 3, 0, 0]}
-                  maxBarSize={18}
-                />
-
-                {/* Orange/Coral Spline curve (SIF Precursors) */}
-                <Line
-                  type="monotone"
-                  dataKey="sif"
-                  stroke="#F97316"
-                  strokeWidth={2.5}
-                  dot={{ r: 3, fill: '#F97316', strokeWidth: 0 }}
-                  activeDot={{ r: 5, fill: '#EA580C', stroke: '#FFF', strokeWidth: 2 }}
-                />
-
-                {/* Royal Blue Spline curve (Total Incident Stream) */}
-                <Line
-                  type="monotone"
-                  dataKey="total"
-                  stroke="#3B82F6"
-                  strokeWidth={2.5}
-                  dot={{ r: 3, fill: '#3B82F6', strokeWidth: 0 }}
-                  activeDot={{ r: 5, fill: '#2563EB', stroke: '#FFF', strokeWidth: 2 }}
-                />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Right Card: Spending / Incidents by Category (Polar/Donut + Category List) */}
-        <div className="lg:col-span-4 bg-white border border-slate-200/70 rounded-2xl p-6 shadow-[0_2px_10px_-2px_rgba(0,0,0,0.03)] flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-bold text-slate-900">Incidents by Category</h2>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 my-auto">
-            {/* Donut / Polar segmented wheel */}
-            <div className="w-[170px] h-[170px] relative flex-shrink-0 flex items-center justify-center">
+          ) : (
+            <div className="h-56">
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={categoryData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={45}
-                    outerRadius={75}
-                    paddingAngle={3}
-                    dataKey="value"
-                  >
-                    {categoryData.map((entry, idx) => (
-                      <Cell key={`cell-${idx}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(val: any, name: any) => [`${val} reports`, name]}
-                    contentStyle={{
-                      backgroundColor: '#FFFFFF',
-                      borderRadius: '12px',
-                      border: '1px solid #E2E8F0',
-                      boxShadow: '0 8px 20px -4px rgba(0,0,0,0.1)',
-                      fontSize: '11px',
-                    }}
+                <ComposedChart data={monthlyData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                  <XAxis
+                    dataKey="month"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 11, fill: 'var(--color-text-tertiary)' }}
                   />
-                </PieChart>
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 10, fill: 'var(--color-text-tertiary)' }}
+                  />
+                  <Tooltip content={<ChartTooltip />} />
+                  <Bar dataKey="Total Incidents" fill="var(--color-border)" radius={[2, 2, 0, 0]} maxBarSize={14} />
+                  <Line
+                    type="monotone"
+                    dataKey="SIF Precursors"
+                    stroke="var(--color-orange-brand)"
+                    strokeWidth={2.5}
+                    dot={{ r: 3, fill: 'var(--color-orange-brand)', strokeWidth: 0 }}
+                    activeDot={{ r: 5, stroke: '#fff', strokeWidth: 2 }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="Critical"
+                    stroke="var(--color-critical)"
+                    strokeWidth={1.5}
+                    strokeDasharray="4 2"
+                    dot={false}
+                  />
+                </ComposedChart>
               </ResponsiveContainer>
-              {/* Inner ambient glow */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <span className="text-[11px] font-semibold text-slate-400">100%</span>
-              </div>
             </div>
-
-            {/* Category breakdown list with colored indicators */}
-            <div className="flex-1 w-full space-y-2.5">
-              {categoryData.map((item) => (
-                <div key={item.name} className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2 truncate pr-2">
-                    <span
-                      className="w-2 h-2 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: item.color }}
-                    />
-                    <span className="text-slate-600 truncate font-medium">{item.name}</span>
-                  </div>
-                  <span className="font-bold text-slate-800">{item.percentage}%</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ─── Bottom Row: 3 Columns ────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* Column 1: Top High-Risk Facilities (like "Top Spending merchants") */}
-        <div className="bg-white border border-slate-200/70 rounded-2xl p-6 shadow-[0_2px_10px_-2px_rgba(0,0,0,0.03)] flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-bold text-slate-900">Top High-Risk Facilities</h2>
-          </div>
-
-          {/* Facility List with progress bars */}
-          <div className="space-y-4 my-auto">
-            {topFacilities.map((fac) => (
-              <div key={fac.id} className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div
-                      className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-sm"
-                      style={{ backgroundColor: fac.color }}
-                    >
-                      {fac.initials}
-                    </div>
-                    <span className="text-xs font-semibold text-slate-800">{fac.name}</span>
-                  </div>
-                  <span className="text-xs font-bold text-slate-700">
-                    {fac.count} ({fac.percentage}%)
-                  </span>
-                </div>
-
-                {/* Progress bar track & fill */}
-                <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all duration-500"
-                    style={{
-                      width: `${fac.percentage}%`,
-                      backgroundColor: fac.color,
-                    }}
-                  />
-                </div>
+          )}
+          {/* Legend */}
+          <div className="flex items-center gap-5 mt-3">
+            {[
+              { label: 'SIF Precursors', color: 'var(--color-orange-brand)' },
+              { label: 'Critical', color: 'var(--color-critical)', dashed: true },
+              { label: 'Total (bars)', color: 'var(--color-border)' },
+            ].map(({ label, color, dashed }) => (
+              <div key={label} className="flex items-center gap-1.5 text-[10.5px] text-[var(--color-text-tertiary)]">
+                <span
+                  className="inline-block w-4 h-0.5"
+                  style={{
+                    borderStyle: dashed ? 'dashed' : 'solid',
+                    borderTop: `1.5px ${dashed ? 'dashed' : 'solid'} ${color}`,
+                    backgroundColor: 'transparent',
+                  }}
+                />
+                {label}
               </div>
             ))}
           </div>
         </div>
 
-        {/* Column 2: Barrier Integrity Semi-Circle Arc Gauge (like "Income vs Expense") */}
-        <div className="bg-white border border-slate-200/70 rounded-2xl p-6 shadow-[0_2px_10px_-2px_rgba(0,0,0,0.03)] flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-base font-bold text-slate-900">Barrier Reliability Index</h2>
+        {/* SIF Score Distribution — 4 cols */}
+        <div className="lg:col-span-4 bg-white border border-[var(--color-border)] rounded-xl p-6">
+          <div className="mb-5">
+            <h2 className="text-[14px] font-bold text-[var(--color-text-primary)]">
+              SIF Score Distribution
+            </h2>
+            <p className="text-[11.5px] text-[var(--color-text-tertiary)] mt-0.5">
+              Incidents by risk tier
+            </p>
           </div>
-
-          {/* Radial Tick Arc SVG Gauge */}
-          <div className="flex flex-col items-center justify-center my-auto py-2">
-            <div className="relative w-[240px] h-[130px] flex items-center justify-center">
-              <svg width="240" height="130" viewBox="0 0 240 130">
-                {/* Generate radial ticks spanning 180 degrees */}
-                {Array.from({ length: 50 }).map((_, i) => {
-                  const totalTicks = 50;
-                  const ratio = i / (totalTicks - 1);
-                  // Angle from PI (180deg) to 0 (0deg)
-                  const angle = Math.PI - ratio * Math.PI;
-                  const cx = 120;
-                  const cy = 115;
-                  const rInner = 80;
-                  const rOuter = 96;
-
-                  const x1 = cx + rInner * Math.cos(angle);
-                  const y1 = cy - rInner * Math.sin(angle);
-                  const x2 = cx + rOuter * Math.cos(angle);
-                  const y2 = cy - rOuter * Math.sin(angle);
-
-                  // 84.7% operational barrier integrity
-                  const isEffective = ratio <= 0.847;
-
-                  // Warm orange to amber gradient for active ticks, soft gray for failed/bypassed
-                  const strokeColor = isEffective
-                    ? ratio < 0.5
-                      ? '#F97316'
-                      : '#FB923C'
-                    : '#E2E8F0';
-
-                  return (
-                    <line
-                      key={i}
-                      x1={x1}
-                      y1={y1}
-                      x2={x2}
-                      y2={y2}
-                      stroke={strokeColor}
-                      strokeWidth={2.4}
-                      strokeLinecap="round"
-                    />
-                  );
-                })}
-              </svg>
-
-              {/* Gauge Center Stat */}
-              <div className="absolute top-[52px] text-center">
-                <span className="text-[11px] font-medium text-slate-400 block tracking-tight">
-                  Safety Integrity
-                </span>
-                <span className="text-xl font-bold text-slate-900 tracking-tight">84.7%</span>
-              </div>
+          {scoreDistData.length === 0 ? (
+            <div className="h-44 flex items-center justify-center text-[12px] text-[var(--color-text-tertiary)]">
+              No score data available
             </div>
-
-            {/* Bottom Sub-stats mirroring screenshot */}
-            <div className="w-full flex items-center justify-between px-4 mt-2 text-xs">
-              <div className="text-slate-500">
-                Total Barriers: <span className="font-bold text-slate-800">1,029</span>
-              </div>
-              <div className="text-slate-500">
-                Failed / Bypassed: <span className="font-bold text-slate-800">157</span>
-              </div>
+          ) : (
+            <div className="h-44">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={scoreDistData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+                  <XAxis dataKey="range" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'var(--color-text-tertiary)' }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'var(--color-text-tertiary)' }} />
+                  <Tooltip content={<ChartTooltip />} />
+                  <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                    {scoreDistData.map((_, i) => {
+                      const colors = ['var(--color-low)', 'var(--color-medium)', 'var(--color-high)', 'var(--color-critical)'];
+                      return <Cell key={i} fill={colors[i % colors.length]} />;
+                    })}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
             </div>
-          </div>
-        </div>
-
-        {/* Column 3: SIF Velocity Trend with Peaks (like "Cash flow Trend") */}
-        <div className="bg-white border border-slate-200/70 rounded-2xl p-6 shadow-[0_2px_10px_-2px_rgba(0,0,0,0.03)] flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-1">
-            <h2 className="text-base font-bold text-slate-900">SIF Event Frequency Trend</h2>
-          </div>
-
-          <p className="text-xs text-slate-500 mb-2">
-            Net SIF Incidents:{' '}
-            <span className="font-bold text-slate-900">
-              {(kpi.sif_potential_count || 373).toLocaleString()}
-            </span>
-          </p>
-
-          {/* Area Spike Chart with Peak Tooltip */}
-          <div className="h-[140px] w-full relative">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
-                data={frequencyTrendData}
-                margin={{ top: 15, right: 10, left: -25, bottom: 0 }}
-              >
-                <defs>
-                  <linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.25} />
-                    <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.0} />
-                  </linearGradient>
-                </defs>
-                <XAxis
-                  dataKey="period"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 9, fill: '#94A3B8' }}
-                  interval={3}
-                />
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 9, fill: '#94A3B8' }}
-                  domain={[0, 50]}
-                />
-                <Tooltip content={<CustomTrendTooltip />} />
-                <Area
-                  type="monotone"
-                  dataKey="count"
-                  stroke="#3B82F6"
-                  strokeWidth={2}
-                  fillOpacity={1}
-                  fill="url(#trendGradient)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-
-            {/* Annotated Peak Pill Tooltip (Mar 12 Peak matching the screenshot) */}
-            <div className="absolute top-1 left-[44%] -translate-x-1/2 bg-white px-2.5 py-1 rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.08)] border border-slate-100 text-[10px] pointer-events-none text-center hidden sm:block">
-              <span className="text-slate-400 block leading-tight">Mar 12, 2026</span>
-              <span className="font-bold text-slate-900">42 SIFs</span>
-            </div>
-          </div>
+          )}
         </div>
       </div>
+
+      {/* ── Facility Risk Table ──────────────────────────────────────────────── */}
+      {facilityData.length > 0 && (
+        <div className="bg-white border border-[var(--color-border)] rounded-xl p-6">
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h2 className="text-[14px] font-bold text-[var(--color-text-primary)]">Facility Risk Profile</h2>
+              <p className="text-[11.5px] text-[var(--color-text-tertiary)] mt-0.5">
+                Incident volume and SIF potential by facility
+              </p>
+            </div>
+            <button
+              onClick={() => navigate('/incidents')}
+              className="text-[11.5px] font-semibold text-[var(--color-orange-brand)] hover:underline flex items-center gap-1"
+            >
+              View all <ArrowRight className="w-3 h-3" />
+            </button>
+          </div>
+          <div className="space-y-3">
+            {facilityData.map((f) => (
+              <div key={f.name} className="flex items-center gap-4">
+                <div className="text-[12px] font-medium text-[var(--color-text-primary)] w-40 flex-shrink-0 truncate">
+                  {f.name}
+                </div>
+                <div className="flex-1 h-2 bg-[var(--color-surface)] rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all"
+                    style={{
+                      width: `${f.pct}%`,
+                      background: 'var(--color-orange-brand)',
+                      opacity: 0.7,
+                    }}
+                  />
+                </div>
+                <div className="text-[11.5px] font-bold text-[var(--color-text-primary)] w-10 text-right flex-shrink-0">
+                  {f.total}
+                </div>
+                <div className="text-[11px] text-[var(--color-high)] font-semibold w-14 text-right flex-shrink-0">
+                  {f.sif} SIF
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
