@@ -13,11 +13,14 @@ APP_VERSION = "1.0.0"
 DEBUG = os.getenv("DEBUG", "false").lower() == "true"
 
 # CORS settings
+ALLOWED_ORIGINS_ENV = os.getenv("ALLOWED_ORIGINS", "")
 ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://localhost:3000",
     "http://127.0.0.1:5173",
 ]
+if ALLOWED_ORIGINS_ENV:
+    ALLOWED_ORIGINS.extend([origin.strip() for origin in ALLOWED_ORIGINS_ENV.split(",") if origin.strip()])
 
 # Pagination defaults
 DEFAULT_PAGE_SIZE = 50
