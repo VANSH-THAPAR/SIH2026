@@ -77,7 +77,7 @@ function KPICard({
         <div className="text-[11px] text-[var(--color-text-tertiary)]">{subtext}</div>
       )}
       {onClick && (
-        <div className="flex items-center gap-1 text-[11px] font-semibold text-[var(--color-orange-brand)] opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-1 text-[11px] font-semibold text-[var(--color-primary)] opacity-0 group-hover:opacity-100 transition-opacity">
           View details <ArrowRight className="w-3 h-3" />
         </div>
       )}
@@ -152,25 +152,25 @@ export function CommandCenter() {
       <div className="flex items-start justify-between">
         <div>
           <div className="h-6 w-40 bg-[var(--color-border)] rounded mb-1" />
-          <div className="h-3 w-64 bg-[var(--color-surface-subtle)] rounded" />
+          <div className="h-3 w-64 bg-[var(--color-surface-strong)] rounded" />
         </div>
-        <div className="h-4 w-24 bg-[var(--color-surface-subtle)] rounded" />
+        <div className="h-4 w-24 bg-[var(--color-surface-strong)] rounded" />
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[1, 2, 3, 4].map((i) => (
           <div key={i} className="bg-white border border-[var(--color-border)] rounded-xl p-5 flex flex-col gap-3">
-            <div className="h-3 w-20 bg-[var(--color-surface-subtle)] rounded" />
+            <div className="h-3 w-20 bg-[var(--color-surface-strong)] rounded" />
             <div className="h-8 w-16 bg-[var(--color-border)] rounded" />
-            <div className="h-2 w-24 bg-[var(--color-surface-subtle)] rounded" />
+            <div className="h-2 w-24 bg-[var(--color-surface-strong)] rounded" />
           </div>
         ))}
       </div>
       <div className="grid grid-cols-3 lg:grid-cols-6 gap-3">
         {[1, 2, 3, 4, 5, 6].map((i) => (
           <div key={i} className="bg-white border border-[var(--color-border)] rounded-xl p-4">
-            <div className="h-2 w-16 bg-[var(--color-surface-subtle)] rounded mb-2" />
+            <div className="h-2 w-16 bg-[var(--color-surface-strong)] rounded mb-2" />
             <div className="h-6 w-12 bg-[var(--color-border)] rounded mb-2" />
-            <div className="h-2 w-20 bg-[var(--color-surface-subtle)] rounded" />
+            <div className="h-2 w-20 bg-[var(--color-surface-strong)] rounded" />
           </div>
         ))}
       </div>
@@ -289,9 +289,9 @@ export function CommandCenter() {
                   <Line
                     type="monotone"
                     dataKey="SIF Precursors"
-                    stroke="var(--color-orange-brand)"
+                    stroke="var(--color-primary)"
                     strokeWidth={2.5}
-                    dot={{ r: 3, fill: 'var(--color-orange-brand)', strokeWidth: 0 }}
+                    dot={{ r: 3, fill: 'var(--color-primary)', strokeWidth: 0 }}
                     activeDot={{ r: 5, stroke: '#fff', strokeWidth: 2 }}
                   />
                   <Line
@@ -309,7 +309,7 @@ export function CommandCenter() {
           {/* Legend */}
           <div className="flex items-center gap-5 mt-3">
             {[
-              { label: 'SIF Precursors', color: 'var(--color-orange-brand)' },
+              { label: 'SIF Precursors', color: 'var(--color-primary)' },
               { label: 'Critical', color: 'var(--color-critical)', dashed: true },
               { label: 'Total (bars)', color: 'var(--color-border)' },
             ].map(({ label, color, dashed }) => (
@@ -374,7 +374,7 @@ export function CommandCenter() {
             </div>
             <button
               onClick={() => navigate('/incidents')}
-              className="text-[11.5px] font-semibold text-[var(--color-orange-brand)] hover:underline flex items-center gap-1"
+              className="text-[11.5px] font-semibold text-[var(--color-primary)] hover:underline flex items-center gap-1"
             >
               View all <ArrowRight className="w-3 h-3" />
             </button>
@@ -390,7 +390,7 @@ export function CommandCenter() {
                     className="h-full rounded-full transition-all"
                     style={{
                       width: `${f.pct}%`,
-                      background: 'var(--color-orange-brand)',
+                      background: 'var(--color-primary)',
                       opacity: 0.7,
                     }}
                   />

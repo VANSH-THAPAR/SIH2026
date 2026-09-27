@@ -2,50 +2,59 @@
 
 @theme {
   /* ─── Brand ─── */
-  --color-orange-brand: #E8650A;
-  --color-orange-light: #FEF0E6;
-  --color-orange-mid: #FBD9BC;
+  --color-primary: #292524;
+  --color-primary-active: #0c0a09;
+  --color-ink: #0c0a09;
+  --color-on-primary: #ffffff;
+  --color-on-dark: #ffffff;
 
   /* ─── Surfaces ─── */
-  --color-surface: #F7F6F3;
-  --color-surface-elevated: #FFFFFF;
-  --color-surface-subtle: #F0EFEc;
+  --color-canvas: #f5f5f5;
+  --color-canvas-soft: #fafafa;
+  --color-canvas-deep: #0c0a09;
+  --color-surface: #ffffff;
+  --color-surface-elevated: #ffffff;
+  --color-surface-strong: #f0efed;
+  --color-surface-dark: #0c0a09;
 
   /* ─── Text ─── */
-  --color-text-primary: #1C1B18;
-  --color-text-secondary: #65635E;
-  --color-text-tertiary: #A39F9A;
+  --color-text-primary: #292524;
+  --color-text-secondary: #4e4e4e;
+  --color-text-tertiary: #777169;
+  --color-text-muted: #a8a29e;
 
   /* ─── Borders ─── */
-  --color-border: #E4E1DB;
-  --color-border-strong: #C8C4BC;
+  --color-border: #e7e5e4;
+  --color-border-soft: #f0efed;
+  --color-border-strong: #d6d3d1;
 
   /* ─── Semantic risk colors ─── */
-  --color-critical: #C41E3A;
-  --color-critical-bg: #FFF0F0;
-  --color-critical-border: #FEC5C5;
+  --color-critical: #dc2626;
+  --color-critical-bg: #fef2f2;
+  --color-critical-border: #fca5a5;
 
-  --color-high: #C44B0A;
-  --color-high-bg: #FEF3EA;
-  --color-high-border: #FAC89A;
+  --color-high: #c2410c;
+  --color-high-bg: #fff7ed;
+  --color-high-border: #fdba74;
 
-  --color-medium: #8A6200;
-  --color-medium-bg: #FEF8E7;
-  --color-medium-border: #F5D87A;
+  --color-medium: #b45309;
+  --color-medium-bg: #fffbeb;
+  --color-medium-border: #fcd34d;
 
-  --color-low: #1A7050;
-  --color-low-bg: #EDFAF5;
-  --color-low-border: #9EDED1;
+  --color-low: #16a34a;
+  --color-low-bg: #f0fdf4;
+  --color-low-border: #86efac;
 
-  --color-success: #1A7050;
-  --color-success-bg: #EDFAF5;
+  --color-success: #16a34a;
+  --color-success-bg: #f0fdf4;
 
-  --color-info: #1A5EA8;
-  --color-info-bg: #EEF4FD;
-  --color-info-border: #B3D0F5;
+  --color-info: #2563eb;
+  --color-info-bg: #eff6ff;
+  --color-info-border: #93c5fd;
 
   /* ─── Typography ─── */
   --font-sans: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-serif: "Waldenburg", "Times New Roman", serif;
   --font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
 }
 
@@ -61,7 +70,7 @@
     margin: 0;
     padding: 0;
     width: 100%;
-    background-color: var(--color-surface);
+    background-color: var(--color-canvas);
     color: var(--color-text-primary);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
@@ -139,6 +148,6 @@
 
 /* ─── Focus visible ──────────────────────────────────────── */
 :focus-visible {
-  outline: 2px solid var(--color-orange-brand);
+  outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }

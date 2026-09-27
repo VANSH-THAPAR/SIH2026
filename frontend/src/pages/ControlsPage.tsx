@@ -48,16 +48,16 @@ export function ControlsPage() {
     <div className="p-7 space-y-6 max-w-[1600px] mx-auto animate-skeleton">
       <div>
         <div className="h-6 w-40 bg-[var(--color-border)] rounded mb-1" />
-        <div className="h-3 w-64 bg-[var(--color-surface-subtle)] rounded" />
+        <div className="h-3 w-64 bg-[var(--color-surface-strong)] rounded" />
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[1, 2, 3, 4].map((i) => (
           <div key={i} className="bg-white border border-[var(--color-border)] rounded-xl p-5 flex flex-col gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[var(--color-surface-subtle)]" />
+              <div className="w-9 h-9 rounded-xl bg-[var(--color-surface-strong)]" />
               <div>
-                <div className="h-3 w-24 bg-[var(--color-surface-subtle)] rounded mb-1" />
-                <div className="h-2 w-16 bg-[var(--color-surface-subtle)] rounded" />
+                <div className="h-3 w-24 bg-[var(--color-surface-strong)] rounded mb-1" />
+                <div className="h-2 w-16 bg-[var(--color-surface-strong)] rounded" />
               </div>
             </div>
             <div className="h-8 w-16 bg-[var(--color-border)] rounded" />
@@ -171,7 +171,7 @@ export function ControlsPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={activeTab === 'barriers' ? 'Search barriers…' : 'Search LSRs…'}
-              className="pl-9 pr-4 py-2 text-[12px] border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[var(--color-orange-brand)] w-52 text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] transition-colors"
+              className="pl-9 pr-4 py-2 text-[12px] border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)] w-52 text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] transition-colors"
             />
           </div>
         </div>
@@ -266,7 +266,7 @@ export function ControlsPage() {
           <div className="p-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {filteredLSRs.map((lsr, i) => {
               const accentColors = [
-                'var(--color-orange-brand)',
+                'var(--color-primary)',
                 'var(--color-critical)',
                 'var(--color-high)',
                 'var(--color-medium)',

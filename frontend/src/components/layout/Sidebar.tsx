@@ -17,7 +17,7 @@ import { useAuthStore } from '@/store/authStore';
 const PRIMARY_NAV = [
   { path: '/', label: 'Command Center', icon: LayoutDashboard, exact: true },
   { path: '/incidents', label: 'Incident Board', icon: AlertTriangle },
-  { path: '/sif', label: 'SIF Intelligence', icon: SquareActivity },
+  { path: '/sif', label: 'Nirikshan', icon: SquareActivity },
   { path: '/controls', label: 'Safety Controls', icon: ShieldCheck },
   { path: '/patterns', label: 'Pattern Intel', icon: Network },
   { path: '/memory', label: 'Safety Memory', icon: Brain },
@@ -41,19 +41,19 @@ function NavItem({ path, label, icon: Icon, exact }: typeof PRIMARY_NAV[0]) {
       className={clsx(
         'flex items-center gap-2.5 px-3 py-2 rounded-lg text-[12.5px] font-medium transition-all duration-100',
         isActive
-          ? 'bg-[var(--color-orange-light)] text-[var(--color-orange-brand)]'
-          : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-subtle)]'
+          ? 'bg-[var(--color-surface-strong)] text-[var(--color-primary)]'
+          : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-strong)]'
       )}
     >
       <Icon
         className={clsx(
           'w-4 h-4 flex-shrink-0',
-          isActive ? 'text-[var(--color-orange-brand)]' : 'text-[var(--color-text-tertiary)]'
+          isActive ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-tertiary)]'
         )}
       />
       <span className="truncate">{label}</span>
       {isActive && (
-        <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[var(--color-orange-brand)] flex-shrink-0" />
+        <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[var(--color-primary)] flex-shrink-0" />
       )}
     </NavLink>
   );
@@ -77,23 +77,13 @@ export function Sidebar() {
         <div className="flex items-center gap-2.5">
           {/* Logo mark */}
           <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-            style={{ background: 'var(--color-orange-brand)' }}
+            className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-transparent overflow-hidden"
           >
-            <svg viewBox="0 0 20 20" fill="none" className="w-4 h-4">
-              <path
-                d="M10 2 L16 5.5 L16 12.5 C16 16 13 18.5 10 19.5 C7 18.5 4 16 4 12.5 L4 5.5 Z"
-                fill="none" stroke="white" strokeWidth="1.5" strokeLinejoin="round"
-              />
-              <path
-                d="M8 10.5 C8 9 9 8 10 8 C11 8 12 9 12 10.5 C12 11.5 11 12 10 12.5 C9 13 8 13.5 8 15"
-                stroke="white" strokeWidth="1.3" strokeLinecap="round" fill="none"
-              />
-            </svg>
+            <img src="/logo.png" alt="Nirikshan Logo" className="w-full h-full object-cover" />
           </div>
           <div>
             <div className="text-[13px] font-bold text-[var(--color-text-primary)] tracking-tight leading-none">
-              SIF Intelligence
+              Nirikshan
             </div>
             <div className="text-[10px] text-[var(--color-text-tertiary)] mt-0.5 font-medium tracking-wide uppercase">
               HSE Risk Platform
@@ -132,7 +122,7 @@ export function Sidebar() {
               background:
                 user?.role === 'reporter'
                   ? 'var(--color-low)'
-                  : 'var(--color-orange-brand)',
+                  : 'var(--color-primary)',
             }}
           >
             {initials}

@@ -18,22 +18,12 @@ export function ReporterView() {
         <div className="flex items-center gap-3">
           {/* Logo mark */}
           <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{ background: 'var(--color-orange-brand)' }}
+            className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 bg-transparent overflow-hidden shadow-sm"
           >
-            <svg viewBox="0 0 20 20" fill="none" className="w-5 h-5">
-              <path
-                d="M10 2 L16 5.5 L16 12.5 C16 16 13 18.5 10 19.5 C7 18.5 4 16 4 12.5 L4 5.5 Z"
-                fill="none" stroke="white" strokeWidth="1.5" strokeLinejoin="round"
-              />
-              <path
-                d="M8 10.5 C8 9 9 8 10 8 C11 8 12 9 12 10.5 C12 11.5 11 12 10 12.5 C9 13 8 13.5 8 15"
-                stroke="white" strokeWidth="1.3" strokeLinecap="round" fill="none"
-              />
-            </svg>
+            <img src="/logo.png" alt="Nirikshan Logo" className="w-full h-full object-cover" />
           </div>
           <div>
-            <div className="font-bold text-[15px] leading-none text-[var(--color-text-primary)] tracking-tight">SIF Intelligence</div>
+            <div className="font-bold text-[15px] leading-none text-[var(--color-text-primary)] tracking-tight">Nirikshan</div>
             <div className="text-[11px] text-[var(--color-text-secondary)] tracking-wider uppercase font-semibold mt-0.5">Field Reporter</div>
           </div>
         </div>

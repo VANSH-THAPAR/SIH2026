@@ -52,14 +52,14 @@ const STATUS_CFG: Record<string, string> = {
   CLOSED: 'bg-[var(--color-success-bg)] text-[var(--color-success)] border-[var(--color-low-border)]',
   INVESTIGATING: 'bg-[var(--color-medium-bg)] text-[var(--color-medium)] border-[var(--color-medium-border)]',
   ACTION_REQUIRED: 'bg-[var(--color-high-bg)] text-[var(--color-high)] border-[var(--color-high-border)]',
-  TODO: 'bg-[var(--color-surface-subtle)] text-[var(--color-text-secondary)] border-[var(--color-border)]',
+  TODO: 'bg-[var(--color-surface-strong)] text-[var(--color-text-secondary)] border-[var(--color-border)]',
   IN_PROGRESS_ACTION: 'bg-[var(--color-high-bg)] text-[var(--color-high)] border-[var(--color-high-border)]',
   VERIFICATION: 'bg-[var(--color-info-bg)] text-[var(--color-info)] border-[var(--color-info-border)]',
 };
 
 export function StatusBadge({ status, size = 'sm' }: { status: string; size?: 'xs' | 'sm' | 'md' }) {
   if (!status) return null;
-  const styles = STATUS_CFG[status] || 'bg-[var(--color-surface-subtle)] text-[var(--color-text-secondary)] border-[var(--color-border)]';
+  const styles = STATUS_CFG[status] || 'bg-[var(--color-surface-strong)] text-[var(--color-text-secondary)] border-[var(--color-border)]';
   const label = status.replace(/_/g, ' ');
   return (
     <span
@@ -90,7 +90,7 @@ export function SIFBadge({ classification, score }: SIFBadgeProps) {
         'inline-flex items-center gap-1 rounded border font-semibold px-1.5 py-0.5 text-xs',
         isSIF
           ? 'bg-[var(--color-critical-bg)] text-[var(--color-critical)] border-[var(--color-critical-border)]'
-          : 'bg-[var(--color-surface-subtle)] text-[var(--color-text-secondary)] border-[var(--color-border)]'
+          : 'bg-[var(--color-surface-strong)] text-[var(--color-text-secondary)] border-[var(--color-border)]'
       )}
     >
       {isSIF && <span className="w-1 h-1 rounded-full bg-[var(--color-critical)] flex-shrink-0" />}
@@ -109,13 +109,13 @@ const BARRIER_CFG: Record<string, string> = {
   MISSING: 'bg-[var(--color-critical-bg)] text-[var(--color-critical)] border-[var(--color-critical-border)]',
   BYPASSED: 'bg-[var(--color-high-bg)] text-[var(--color-high)] border-[var(--color-high-border)]',
   DEGRADED: 'bg-[var(--color-medium-bg)] text-[var(--color-medium)] border-[var(--color-medium-border)]',
-  UNKNOWN: 'bg-[var(--color-surface-subtle)] text-[var(--color-text-tertiary)] border-[var(--color-border)]',
-  NOT_APPLICABLE: 'bg-[var(--color-surface-subtle)] text-[var(--color-text-tertiary)] border-[var(--color-border)]',
+  UNKNOWN: 'bg-[var(--color-surface-strong)] text-[var(--color-text-tertiary)] border-[var(--color-border)]',
+  NOT_APPLICABLE: 'bg-[var(--color-surface-strong)] text-[var(--color-text-tertiary)] border-[var(--color-border)]',
 };
 
 export function BarrierBadge({ status, size = 'sm' }: { status: string; size?: 'xs' | 'sm' | 'md' }) {
   if (!status) return null;
-  const styles = BARRIER_CFG[status] || 'bg-[var(--color-surface-subtle)] text-[var(--color-text-secondary)] border-[var(--color-border)]';
+  const styles = BARRIER_CFG[status] || 'bg-[var(--color-surface-strong)] text-[var(--color-text-secondary)] border-[var(--color-border)]';
   return (
     <span
       className={clsx(
@@ -140,12 +140,12 @@ const EXPOSURE_CFG: Record<string, string> = {
   DOCUMENTED_EXPOSURE: 'bg-[var(--color-critical-bg)] text-[var(--color-critical)]',
   POTENTIAL_EXPOSURE: 'bg-[var(--color-high-bg)] text-[var(--color-high)]',
   NEAR_MISS_EXPOSURE: 'bg-[var(--color-medium-bg)] text-[var(--color-medium)]',
-  NO_DOCUMENTED_EXPOSURE: 'bg-[var(--color-surface-subtle)] text-[var(--color-text-secondary)]',
+  NO_DOCUMENTED_EXPOSURE: 'bg-[var(--color-surface-strong)] text-[var(--color-text-secondary)]',
 };
 
 export function ExposureBadge({ status }: { status?: string; size?: 'xs' | 'sm' | 'md' }) {
   if (!status) return null;
-  const styles = EXPOSURE_CFG[status] || 'bg-[var(--color-surface-subtle)] text-[var(--color-text-secondary)]';
+  const styles = EXPOSURE_CFG[status] || 'bg-[var(--color-surface-strong)] text-[var(--color-text-secondary)]';
   const label = status.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase()).toLowerCase().replace(/^./, c => c.toUpperCase());
   return (
     <span className={clsx('inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium', styles)}>
@@ -162,7 +162,7 @@ export function TrendBadge({ trend }: { trend: string }) {
     INCREASING: { label: '↑ Rising', styles: 'bg-[var(--color-critical-bg)] text-[var(--color-critical)]' },
     DOWN: { label: '↓ Declining', styles: 'bg-[var(--color-low-bg)] text-[var(--color-low)]' },
     DECREASING: { label: '↓ Declining', styles: 'bg-[var(--color-low-bg)] text-[var(--color-low)]' },
-    STABLE: { label: '→ Stable', styles: 'bg-[var(--color-surface-subtle)] text-[var(--color-text-secondary)]' },
+    STABLE: { label: '→ Stable', styles: 'bg-[var(--color-surface-strong)] text-[var(--color-text-secondary)]' },
   };
   const { label, styles } = cfg[trend] ?? cfg['STABLE'];
   return (
@@ -201,7 +201,7 @@ export function KanbanStatusBadge({ status, size = 'sm' }: { status: string; siz
   if (!status) return null;
   const cfg = KANBAN_CFG[status] || {
     label: status.replace(/_/g, ' '),
-    styles: 'bg-[var(--color-surface-subtle)] text-[var(--color-text-secondary)] border-[var(--color-border)]',
+    styles: 'bg-[var(--color-surface-strong)] text-[var(--color-text-secondary)] border-[var(--color-border)]',
     dot: 'bg-gray-400',
   };
   return (

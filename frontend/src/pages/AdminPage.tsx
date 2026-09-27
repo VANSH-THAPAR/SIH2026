@@ -25,16 +25,16 @@ export function AdminPage() {
       <div className="flex items-start justify-between">
         <div>
           <div className="h-6 w-40 bg-[var(--color-border)] rounded mb-1" />
-          <div className="h-3 w-64 bg-[var(--color-surface-subtle)] rounded" />
+          <div className="h-3 w-64 bg-[var(--color-surface-strong)] rounded" />
         </div>
         <div className="h-8 w-32 bg-[var(--color-border)] rounded-xl" />
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[1, 2, 3, 4].map((i) => (
           <div key={i} className="bg-white border border-[var(--color-border)] rounded-xl p-5">
-            <div className="w-10 h-10 rounded-xl bg-[var(--color-surface-subtle)] mb-4" />
+            <div className="w-10 h-10 rounded-xl bg-[var(--color-surface-strong)] mb-4" />
             <div className="h-6 w-16 bg-[var(--color-border)] rounded mb-1" />
-            <div className="h-3 w-32 bg-[var(--color-surface-subtle)] rounded" />
+            <div className="h-3 w-32 bg-[var(--color-surface-strong)] rounded" />
           </div>
         ))}
       </div>
@@ -42,7 +42,7 @@ export function AdminPage() {
         <div className="p-5 border-b border-[var(--color-border)] h-[72px]" />
         <div className="p-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="h-28 bg-[var(--color-surface-subtle)] border border-[var(--color-border)] rounded-xl" />
+            <div key={i} className="h-28 bg-[var(--color-surface-strong)] border border-[var(--color-border)] rounded-xl" />
           ))}
         </div>
       </div>
@@ -161,7 +161,7 @@ export function AdminPage() {
             return (
               <div
                 key={mod.name}
-                className="flex items-start gap-4 p-5 bg-[var(--color-surface-subtle)] border border-[var(--color-border)] rounded-xl hover:bg-white hover:border-[var(--color-border-strong)] hover:shadow-sm transition-all"
+                className="flex items-start gap-4 p-5 bg-[var(--color-surface-strong)] border border-[var(--color-border)] rounded-xl hover:bg-white hover:border-[var(--color-border-strong)] hover:shadow-sm transition-all"
               >
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-[var(--color-text-primary)]">
                   <Icon className="w-4.5 h-4.5 text-white" />
@@ -187,7 +187,7 @@ export function AdminPage() {
         <h2 className="text-[15px] font-bold text-[var(--color-text-primary)] mb-5">Platform Information</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
           {[
-            { label: 'Platform', value: 'SIF Intelligence v2.1' },
+            { label: 'Platform', value: 'Nirikshan v2.1' },
             { label: 'Organization', value: 'Corporate HSE' },
             { label: 'Deployment', value: 'HSSE Intelligence System' },
             { label: 'Data Source', value: 'Global Incident Database' },

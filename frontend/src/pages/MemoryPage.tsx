@@ -67,14 +67,14 @@ export function MemoryPage() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Describe an incident or hazard situation…"
-              className="w-full pl-10 pr-4 py-3 border border-[var(--color-border)] rounded-xl focus:ring-2 focus:ring-[var(--color-orange-brand)] focus:border-transparent outline-none text-[13px] text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] bg-[var(--color-surface)] focus:bg-white transition-all"
+              className="w-full pl-10 pr-4 py-3 border border-[var(--color-border)] rounded-xl focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent outline-none text-[13px] text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] bg-[var(--color-surface)] focus:bg-white transition-all"
             />
           </div>
           <button
             type="submit"
             disabled={query.length <= 2 || isLoading}
             className="px-6 py-3 rounded-xl font-semibold text-[13px] text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-            style={{ background: 'var(--color-orange-brand)' }}
+            style={{ background: 'var(--color-primary)' }}
           >
             {isLoading ? 'Searching…' : 'Search'}
           </button>
@@ -88,7 +88,7 @@ export function MemoryPage() {
                 type="radio"
                 checked={searchMode === mode}
                 onChange={() => { setSearchMode(mode); setHasSearched(false); }}
-                className="accent-[var(--color-orange-brand)]"
+                className="accent-[var(--color-primary)]"
               />
               <span className="font-medium">
                 {mode === 'semantic' ? 'Semantic (AI Match)' : 'Keyword Match'}
@@ -108,7 +108,7 @@ export function MemoryPage() {
                 <button
                   key={q}
                   onClick={() => setQuery(q)}
-                  className="text-[11.5px] px-3 py-1.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:border-[var(--color-orange-brand)]/40 hover:text-[var(--color-orange-brand)] transition-all font-medium"
+                  className="text-[11.5px] px-3 py-1.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:border-[var(--color-primary)]/40 hover:text-[var(--color-primary)] transition-all font-medium"
                 >
                   "{q.slice(0, 40)}{q.length > 40 ? '…' : ''}"
                 </button>
@@ -161,8 +161,8 @@ export function MemoryPage() {
                         <span
                           className="text-[10px] font-bold px-1.5 py-0.5 rounded-lg"
                           style={{
-                            background: 'var(--color-orange-light)',
-                            color: 'var(--color-orange-brand)',
+                            background: 'var(--color-surface-strong)',
+                            color: 'var(--color-primary)',
                           }}
                         >
                           {Math.round(incident.similarity_score * 100)}% match
@@ -175,7 +175,7 @@ export function MemoryPage() {
                     </div>
                   </div>
 
-                  <h3 className="font-semibold text-[var(--color-text-primary)] mb-2 text-[13px] group-hover:text-[var(--color-orange-brand)] transition-colors">
+                  <h3 className="font-semibold text-[var(--color-text-primary)] mb-2 text-[13px] group-hover:text-[var(--color-primary)] transition-colors">
                     {incident.title}
                   </h3>
 
@@ -189,7 +189,7 @@ export function MemoryPage() {
                     {incident.site_name && <span>📍 {incident.site_name}</span>}
                     {incident.report_date && <span>📅 {incident.report_date}</span>}
                     {incident.activity && <span>⚙ {incident.activity}</span>}
-                    <span className="ml-auto flex items-center gap-1 text-[var(--color-orange-brand)] font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span className="ml-auto flex items-center gap-1 text-[var(--color-primary)] font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
                       View incident <ArrowRight className="w-3 h-3" />
                     </span>
                   </div>

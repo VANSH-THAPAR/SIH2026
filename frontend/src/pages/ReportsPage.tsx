@@ -70,7 +70,7 @@ export function ReportsPage() {
       <div className="flex items-start justify-between">
         <div>
           <div className="h-6 w-48 bg-[var(--color-border)] rounded mb-1" />
-          <div className="h-3 w-64 bg-[var(--color-surface-subtle)] rounded" />
+          <div className="h-3 w-64 bg-[var(--color-surface-strong)] rounded" />
         </div>
         <div className="h-8 w-32 bg-[var(--color-border)] rounded-xl" />
       </div>
@@ -78,10 +78,10 @@ export function ReportsPage() {
         {[1, 2, 3, 4].map((i) => (
           <div key={i} className="bg-white border border-[var(--color-border)] rounded-xl p-5">
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-9 h-9 rounded-xl bg-[var(--color-surface-subtle)]" />
+              <div className="w-9 h-9 rounded-xl bg-[var(--color-surface-strong)]" />
               <div>
-                <div className="h-3 w-24 bg-[var(--color-surface-subtle)] rounded mb-1" />
-                <div className="h-2 w-16 bg-[var(--color-surface-subtle)] rounded" />
+                <div className="h-3 w-24 bg-[var(--color-surface-strong)] rounded mb-1" />
+                <div className="h-2 w-16 bg-[var(--color-surface-strong)] rounded" />
               </div>
             </div>
             <div className="h-8 w-16 bg-[var(--color-border)] rounded" />
@@ -91,8 +91,8 @@ export function ReportsPage() {
       <div className="bg-white border border-[var(--color-border)] rounded-xl shadow-sm overflow-hidden h-[400px]">
         <div className="p-4 border-b border-[var(--color-border)] bg-[var(--color-surface)] h-[55px]" />
         <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="h-[220px] bg-[var(--color-surface-subtle)] rounded-xl" />
-          <div className="h-[220px] bg-[var(--color-surface-subtle)] rounded-xl" />
+          <div className="h-[220px] bg-[var(--color-surface-strong)] rounded-xl" />
+          <div className="h-[220px] bg-[var(--color-surface-strong)] rounded-xl" />
         </div>
       </div>
     </div>
@@ -122,7 +122,7 @@ export function ReportsPage() {
         {[
           { label: 'Total Incidents', value: kpis?.total_reports ?? 0, icon: FileText, iconBg: 'var(--color-info-bg)', color: 'var(--color-info)', note: 'All time' },
           { label: 'SIF Precursors', value: kpis?.sif_potential_count ?? 0, icon: AlertTriangle, iconBg: 'var(--color-critical-bg)', color: 'var(--color-critical)', note: 'High-risk incidents' },
-          { label: 'Critical Count', value: kpis?.critical_count ?? 0, icon: TrendingUp, iconBg: 'var(--color-orange-light)', color: 'var(--color-orange-brand)', note: 'Priority level' },
+          { label: 'Critical Count', value: kpis?.critical_count ?? 0, icon: TrendingUp, iconBg: 'var(--color-surface-strong)', color: 'var(--color-primary)', note: 'Priority level' },
           { label: 'Failed Barriers', value: kpis?.failed_barriers ?? 0, icon: ShieldCheck, iconBg: 'var(--color-medium-bg)', color: 'var(--color-medium)', note: 'Control failures' },
         ].map((card) => {
           const Icon = card.icon;
@@ -264,7 +264,7 @@ export function ReportsPage() {
                     LOW: 'bg-[var(--color-low-bg)] text-[var(--color-low)] border border-[var(--color-low-border)]',
                   };
                   return (
-                    <tr key={fac.site_name} className={`border-b border-[var(--color-border)] hover:bg-[var(--color-surface)] transition-colors ${i % 2 === 0 ? '' : 'bg-[var(--color-surface-subtle)]'}`}>
+                    <tr key={fac.site_name} className={`border-b border-[var(--color-border)] hover:bg-[var(--color-surface)] transition-colors ${i % 2 === 0 ? '' : 'bg-[var(--color-surface-strong)]'}`}>
                       <td className="px-5 py-3.5 font-semibold text-[var(--color-text-primary)] text-[13px]">{fac.site_name}</td>
                       <td className="px-5 py-3.5 font-bold text-[var(--color-text-primary)] text-[14px]">{fac.total}</td>
                       <td className="px-5 py-3.5 font-bold text-[var(--color-critical)] text-[13px]">{fac.sif_potential}</td>
@@ -297,13 +297,13 @@ export function ReportsPage() {
               </thead>
               <tbody>
                 {barrierData.map((b: any, i: number) => (
-                  <tr key={b.barrier_name} className={`border-b border-[var(--color-border)] hover:bg-[var(--color-surface)] transition-colors ${i % 2 === 0 ? '' : 'bg-[var(--color-surface-subtle)]'}`}>
+                  <tr key={b.barrier_name} className={`border-b border-[var(--color-border)] hover:bg-[var(--color-surface)] transition-colors ${i % 2 === 0 ? '' : 'bg-[var(--color-surface-strong)]'}`}>
                     <td className="px-5 py-3.5">
                       <div className="font-semibold text-[var(--color-text-primary)] text-[13px]">{b.barrier_name}</div>
                       <div className="text-[10px] text-[var(--color-text-tertiary)] font-mono mt-0.5">{b.barrier_code}</div>
                     </td>
                     <td className="px-5 py-3.5">
-                      <span className="text-[11px] font-semibold text-[var(--color-text-secondary)] bg-[var(--color-surface-subtle)] px-2.5 py-1 rounded-lg border border-[var(--color-border)]">
+                      <span className="text-[11px] font-semibold text-[var(--color-text-secondary)] bg-[var(--color-surface-strong)] px-2.5 py-1 rounded-lg border border-[var(--color-border)]">
                         {b.barrier_type}
                       </span>
                     </td>
@@ -315,7 +315,7 @@ export function ReportsPage() {
                         <span className={`font-bold text-[13px] ${b.failure_rate > 25 ? 'text-[var(--color-critical)]' : b.failure_rate > 10 ? 'text-[var(--color-medium)]' : 'text-[var(--color-low)]'}`}>
                           {b.failure_rate?.toFixed(1)}%
                         </span>
-                        <div className="w-16 h-1.5 bg-[var(--color-surface-subtle)] rounded-full overflow-hidden">
+                        <div className="w-16 h-1.5 bg-[var(--color-surface-strong)] rounded-full overflow-hidden">
                           <div
                             className={`h-full rounded-full ${b.failure_rate > 25 ? 'bg-[var(--color-critical)]' : b.failure_rate > 10 ? 'bg-[var(--color-medium)]' : 'bg-[var(--color-low)]'}`}
                             style={{ width: `${Math.min(b.failure_rate, 100)}%` }}

@@ -50,7 +50,7 @@ export function Header() {
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
             placeholder="Search incidents, facilities, hazards…"
-            className="w-full pl-9 pr-8 py-2 text-[12.5px] border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[var(--color-orange-brand)] focus:border-[var(--color-orange-brand)] placeholder-[var(--color-text-tertiary)] text-[var(--color-text-primary)] transition-all"
+            className="w-full pl-9 pr-8 py-2 text-[12.5px] border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)] focus:border-[var(--color-primary)] placeholder-[var(--color-text-tertiary)] text-[var(--color-text-primary)] transition-all"
           />
           {localSearch && (
             <button
@@ -70,14 +70,14 @@ export function Header() {
         <div className="relative" ref={menuRef}>
           <button
             onClick={() => setUserMenuOpen(!userMenuOpen)}
-            className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-[var(--color-surface-subtle)] transition-colors"
+            className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-[var(--color-surface-strong)] transition-colors"
           >
             <div
               className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0"
               style={{
                 background: user?.role === 'reporter'
                   ? 'var(--color-low)'
-                  : 'var(--color-orange-brand)',
+                  : 'var(--color-primary)',
               }}
             >
               {initials}

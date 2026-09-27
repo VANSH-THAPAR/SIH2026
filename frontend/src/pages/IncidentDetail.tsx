@@ -193,7 +193,7 @@ function AIAnalysisTab({ incident }: { incident: any }) {
         )}
         <span
           className="ml-auto text-[10px] font-semibold px-2 py-0.5 rounded"
-          style={{ background: 'var(--color-orange-light)', color: 'var(--color-orange-brand)' }}
+          style={{ background: 'var(--color-surface-strong)', color: 'var(--color-primary)' }}
         >
           AI GENERATED
         </span>
@@ -374,7 +374,7 @@ function SIFAssessmentTab({ incident }: { incident: any }) {
             <h3 className="text-[12px] font-bold text-[var(--color-text-primary)]">AI SIF Reasoning</h3>
             <span
               className="text-[10px] font-semibold px-1.5 py-0.5 rounded"
-              style={{ background: 'var(--color-orange-light)', color: 'var(--color-orange-brand)' }}
+              style={{ background: 'var(--color-surface-strong)', color: 'var(--color-primary)' }}
             >
               AI GENERATED
             </span>
@@ -514,7 +514,7 @@ function BarriersTab({ incident }: { incident: any }) {
             <div className="space-y-1 pt-2 border-t border-[var(--color-border)]">
               {barrier.evidence.map((ev: string, i: number) => (
                 <div key={i} className="flex items-start gap-2 text-[11.5px] text-[var(--color-text-secondary)]">
-                  <span style={{ color: 'var(--color-orange-brand)' }}>›</span>
+                  <span style={{ color: 'var(--color-primary)' }}>›</span>
                   <span>{ev}</span>
                 </div>
               ))}
@@ -552,7 +552,7 @@ function LSRTab({ incident }: { incident: any }) {
           <div className="flex items-start justify-between mb-2">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <Shield size={14} style={{ color: 'var(--color-orange-brand)' }} />
+                <Shield size={14} style={{ color: 'var(--color-primary)' }} />
                 <h4 className="text-[13px] font-bold text-[var(--color-text-primary)]">{lsr.rule_name}</h4>
               </div>
               <div className="text-[10.5px] font-mono text-[var(--color-text-tertiary)]">{lsr.rule_code}</div>
@@ -631,7 +631,7 @@ function SimilarTab({ incident }: { incident: any }) {
             <div className="flex items-center gap-2 flex-shrink-0 ml-3">
               <span
                 className="text-[11px] font-bold px-2 py-0.5 rounded-lg"
-                style={{ background: 'var(--color-orange-light)', color: 'var(--color-orange-brand)' }}
+                style={{ background: 'var(--color-surface-strong)', color: 'var(--color-primary)' }}
               >
                 {Math.round(sim.similarity_score * 100)}% similar
               </span>
@@ -678,7 +678,7 @@ function ActionsTab({ reportId, incident }: { reportId: string; incident: any })
 
   const recommended = incident.recommended_actions || [];
 
-  const inputCls = 'w-full border border-[var(--color-border)] rounded-lg px-3 py-2 text-[12.5px] focus:outline-none focus:ring-1 focus:ring-[var(--color-orange-brand)] bg-white text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)]';
+  const inputCls = 'w-full border border-[var(--color-border)] rounded-lg px-3 py-2 text-[12.5px] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)] bg-white text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)]';
   const labelCls = 'text-[11px] text-[var(--color-text-tertiary)] mb-1 block font-medium';
 
   return (
@@ -704,7 +704,7 @@ function ActionsTab({ reportId, incident }: { reportId: string; incident: any })
             </h4>
             <span
               className="text-[10px] font-semibold px-1.5 py-0.5 rounded"
-              style={{ background: 'var(--color-orange-light)', color: 'var(--color-orange-brand)' }}
+              style={{ background: 'var(--color-surface-strong)', color: 'var(--color-primary)' }}
             >
               AI GENERATED
             </span>
@@ -714,7 +714,7 @@ function ActionsTab({ reportId, incident }: { reportId: string; incident: any })
               <button
                 key={i}
                 onClick={() => setForm((f) => ({ ...f, title: action }))}
-                className="w-full text-left flex items-start gap-2 p-3 hover:bg-[var(--color-surface)] rounded-xl text-[12.5px] text-[var(--color-text-primary)] border border-dashed border-[var(--color-border)] hover:border-[var(--color-orange-brand)]/40 transition-all"
+                className="w-full text-left flex items-start gap-2 p-3 hover:bg-[var(--color-surface)] rounded-xl text-[12.5px] text-[var(--color-text-primary)] border border-dashed border-[var(--color-border)] hover:border-[var(--color-primary)]/40 transition-all"
               >
                 <Plus size={12} className="flex-shrink-0 mt-0.5" style={{ color: 'var(--color-text-tertiary)' }} />
                 <span>{action}</span>
@@ -862,7 +862,7 @@ function ActivityTab({ reportId }: { reportId: string }) {
           onChange={(e) => setCommentText(e.target.value)}
           placeholder="Add a note or comment…"
           rows={3}
-          className="w-full border border-[var(--color-border)] rounded-xl px-3.5 py-2.5 text-[12.5px] focus:outline-none focus:ring-1 focus:ring-[var(--color-orange-brand)] resize-none text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] bg-white"
+          className="w-full border border-[var(--color-border)] rounded-xl px-3.5 py-2.5 text-[12.5px] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)] resize-none text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] bg-white"
         />
         <div className="flex justify-end mt-2.5">
           <button
@@ -970,7 +970,7 @@ export function IncidentDetail() {
         </div>
         <div className="flex gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-4 w-24 bg-[var(--color-surface-subtle)] rounded" />
+            <div key={i} className="h-4 w-24 bg-[var(--color-surface-strong)] rounded" />
           ))}
         </div>
       </div>
@@ -991,7 +991,7 @@ export function IncidentDetail() {
   );
   if (isError || !incident) return <ErrorState message="Incident not found" onRetry={() => refetch()} />;
 
-  const selectCls = 'text-[11.5px] border border-[var(--color-border)] rounded-lg px-2.5 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[var(--color-orange-brand)] text-[var(--color-text-primary)] cursor-pointer hover:border-[var(--color-border-strong)] transition-colors';
+  const selectCls = 'text-[11.5px] border border-[var(--color-border)] rounded-lg px-2.5 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)] text-[var(--color-text-primary)] cursor-pointer hover:border-[var(--color-border-strong)] transition-colors';
 
   return (
     <div className="flex flex-col h-full">
@@ -1087,7 +1087,7 @@ export function IncidentDetail() {
                 className={clsx(
                   'px-4 py-3 text-[12px] font-medium whitespace-nowrap border-b-2 transition-colors flex items-center gap-1.5',
                   activeTab === tab.id
-                    ? 'border-[var(--color-orange-brand)] text-[var(--color-text-primary)]'
+                    ? 'border-[var(--color-primary)] text-[var(--color-text-primary)]'
                     : 'border-transparent text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border)]'
                 )}
               >
@@ -1096,7 +1096,7 @@ export function IncidentDetail() {
                   <span
                     className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
                     style={{
-                      background: activeTab === tab.id ? 'var(--color-orange-brand)' : 'var(--color-surface)',
+                      background: activeTab === tab.id ? 'var(--color-primary)' : 'var(--color-surface)',
                       color: activeTab === tab.id ? 'white' : 'var(--color-text-tertiary)',
                     }}
                   >

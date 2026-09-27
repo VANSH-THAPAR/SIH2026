@@ -71,7 +71,7 @@ function ToastItem({
 export function PageLoading() {
   return (
     <div className="flex flex-col items-center justify-center h-64 gap-3">
-      <div className="w-6 h-6 border-2 border-[var(--color-border)] border-t-[var(--color-orange-brand)] rounded-full animate-spin" />
+      <div className="w-6 h-6 border-2 border-[var(--color-border)] border-t-[var(--color-primary)] rounded-full animate-spin" />
       <span className="text-[12px] text-[var(--color-text-tertiary)]">Loading…</span>
     </div>
   );
@@ -83,7 +83,7 @@ export function SkeletonCard({ className = '' }: { className?: string }) {
     <div className={clsx('bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-xl p-5 animate-skeleton', className)}>
       <div className="h-3 w-24 bg-[var(--color-border)] rounded mb-3" />
       <div className="h-7 w-16 bg-[var(--color-border)] rounded mb-2" />
-      <div className="h-2.5 w-32 bg-[var(--color-surface-subtle)] rounded" />
+      <div className="h-2.5 w-32 bg-[var(--color-surface-strong)] rounded" />
     </div>
   );
 }
@@ -94,7 +94,7 @@ export function SkeletonRow() {
       <div className="h-2.5 w-20 bg-[var(--color-border)] rounded" />
       <div className="h-2.5 w-48 bg-[var(--color-border)] rounded flex-1" />
       <div className="h-5 w-14 bg-[var(--color-border)] rounded" />
-      <div className="h-5 w-14 bg-[var(--color-surface-subtle)] rounded" />
+      <div className="h-5 w-14 bg-[var(--color-surface-strong)] rounded" />
     </div>
   );
 }
@@ -140,7 +140,7 @@ export function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-center justify-center py-14 px-8 text-center">
-      <div className="w-10 h-10 rounded-full bg-[var(--color-surface-subtle)] flex items-center justify-center mb-3">
+      <div className="w-10 h-10 rounded-full bg-[var(--color-surface-strong)] flex items-center justify-center mb-3">
         <Info className="w-4.5 h-4.5 text-[var(--color-text-tertiary)]" />
       </div>
       <p className="text-[13px] font-semibold text-[var(--color-text-primary)]">{title}</p>

@@ -130,7 +130,7 @@ function IncidentCard({ incident, onClick }: { incident: IncidentSummary; onClic
         <PriorityBadge priority={incident.priority} size="xs" />
       </div>
 
-      <div className="text-[12px] font-semibold text-[var(--color-text-primary)] leading-snug mb-2 line-clamp-2 group-hover:text-[var(--color-orange-brand)] transition-colors">
+      <div className="text-[12px] font-semibold text-[var(--color-text-primary)] leading-snug mb-2 line-clamp-2 group-hover:text-[var(--color-primary)] transition-colors">
         {incident.title}
       </div>
 
@@ -263,7 +263,7 @@ function FilterPill({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="appearance-none pl-3 pr-7 py-1.5 text-[12px] font-medium border border-[var(--color-border)] rounded-lg bg-white text-[var(--color-text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-orange-brand)] cursor-pointer hover:border-[var(--color-border-strong)] transition-colors"
+        className="appearance-none pl-3 pr-7 py-1.5 text-[12px] font-medium border border-[var(--color-border)] rounded-lg bg-white text-[var(--color-text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)] cursor-pointer hover:border-[var(--color-border-strong)] transition-colors"
       >
         <option value="">{label}</option>
         {options.map((opt) => (
@@ -573,7 +573,7 @@ export function IncidentBoard() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search incidents…"
-              className="pl-9 pr-3.5 py-2 text-[12px] border border-[var(--color-border)] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-[var(--color-orange-brand)] w-52 placeholder-[var(--color-text-tertiary)] text-[var(--color-text-primary)] transition-colors"
+              className="pl-9 pr-3.5 py-2 text-[12px] border border-[var(--color-border)] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)] w-52 placeholder-[var(--color-text-tertiary)] text-[var(--color-text-primary)] transition-colors"
             />
           </div>
 
@@ -606,7 +606,7 @@ export function IncidentBoard() {
           <label className="flex items-center gap-2 cursor-pointer">
             <div
               onClick={() => setSifOnly((v) => !v)}
-              className={`relative w-9 h-5 rounded-full transition-all ${sifOnly ? 'bg-[var(--color-orange-brand)]' : 'bg-[var(--color-border)]'}`}
+              className={`relative w-9 h-5 rounded-full transition-all ${sifOnly ? 'bg-[var(--color-primary)]' : 'bg-[var(--color-border)]'}`}
             >
               <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${sifOnly ? 'translate-x-4' : 'translate-x-0'}`} />
             </div>
@@ -643,14 +643,14 @@ export function IncidentBoard() {
                   {[1, 2, 3, 4, 5, 6].map((i) => (
                     <tr key={i} className="border-b border-[var(--color-border)]">
                       <td className="px-4 py-3"><div className="h-3 w-16 bg-[var(--color-border)] rounded" /></td>
-                      <td className="px-4 py-3"><div className="h-4 w-48 bg-[var(--color-border)] rounded mb-1" /><div className="h-3 w-24 bg-[var(--color-surface-subtle)] rounded" /></td>
+                      <td className="px-4 py-3"><div className="h-4 w-48 bg-[var(--color-border)] rounded mb-1" /><div className="h-3 w-24 bg-[var(--color-surface-strong)] rounded" /></td>
                       <td className="px-4 py-3"><div className="h-4 w-12 bg-[var(--color-border)] rounded" /></td>
                       <td className="px-4 py-3"><div className="h-4 w-16 bg-[var(--color-border)] rounded" /></td>
-                      <td className="px-4 py-3"><div className="h-4 w-20 bg-[var(--color-surface-subtle)] rounded" /></td>
+                      <td className="px-4 py-3"><div className="h-4 w-20 bg-[var(--color-surface-strong)] rounded" /></td>
                       <td className="px-4 py-3"><div className="h-3 w-24 bg-[var(--color-border)] rounded" /></td>
                       <td className="px-4 py-3"><div className="h-4 w-8 bg-[var(--color-border)] rounded" /></td>
                       <td className="px-4 py-3"><div className="h-3 w-16 bg-[var(--color-border)] rounded" /></td>
-                      <td className="px-4 py-3"><div className="h-6 w-20 bg-[var(--color-surface-subtle)] rounded-lg" /></td>
+                      <td className="px-4 py-3"><div className="h-6 w-20 bg-[var(--color-surface-strong)] rounded-lg" /></td>
                     </tr>
                   ))}
                 </tbody>

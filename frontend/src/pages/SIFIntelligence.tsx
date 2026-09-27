@@ -74,14 +74,14 @@ export function SIFIntelligence() {
     <div className="p-7 space-y-6 max-w-[1600px] mx-auto animate-skeleton">
       <div>
         <div className="h-6 w-48 bg-[var(--color-border)] rounded mb-1" />
-        <div className="h-3 w-72 bg-[var(--color-surface-subtle)] rounded" />
+        <div className="h-3 w-72 bg-[var(--color-surface-strong)] rounded" />
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[1, 2, 3, 4].map((i) => (
           <div key={i} className="bg-white border border-[var(--color-border)] rounded-xl p-5">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-9 h-9 rounded-xl bg-[var(--color-surface-subtle)]" />
-              <div className="h-3 w-24 bg-[var(--color-surface-subtle)] rounded" />
+              <div className="w-9 h-9 rounded-xl bg-[var(--color-surface-strong)]" />
+              <div className="h-3 w-24 bg-[var(--color-surface-strong)] rounded" />
             </div>
             <div className="h-8 w-16 bg-[var(--color-border)] rounded" />
           </div>
@@ -94,14 +94,14 @@ export function SIFIntelligence() {
       <div className="bg-white border border-[var(--color-border)] rounded-xl h-[400px]" />
     </div>
   );
-  if (isError) return <ErrorState message="Failed to load SIF intelligence data." />;
+  if (isError) return <ErrorState message="Failed to load Nirikshan data." />;
 
   return (
     <div className="p-7 space-y-6 max-w-[1600px] mx-auto">
       {/* ── Header ──────────────────────────────────────────────────────────── */}
       <div>
         <h1 className="text-[22px] font-bold text-[var(--color-text-primary)] tracking-tight">
-          SIF Intelligence
+          Nirikshan
         </h1>
         <p className="text-[13px] text-[var(--color-text-secondary)] mt-0.5">
           Serious Injury and Fatality precursor incidents and exposure analysis
@@ -129,8 +129,8 @@ export function SIFIntelligence() {
             label: 'Critical Priority',
             value: kpis?.critical_count ?? '—',
             icon: ShieldAlert,
-            accent: 'var(--color-orange-brand)',
-            accentBg: 'var(--color-orange-light)',
+            accent: 'var(--color-primary)',
+            accentBg: 'var(--color-surface-strong)',
           },
           {
             label: 'Documented Exposure',
@@ -263,7 +263,7 @@ export function SIFIntelligence() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search SIF incidents…"
-              className="pl-9 pr-4 py-2 text-[12px] border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[var(--color-orange-brand)] w-52 transition-colors text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)]"
+              className="pl-9 pr-4 py-2 text-[12px] border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)] w-52 transition-colors text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)]"
             />
           </div>
         </div>
@@ -292,13 +292,13 @@ export function SIFIntelligence() {
                     className={`border-b border-[var(--color-border)] hover:bg-[var(--color-surface)] transition-colors last:border-0 ${i % 2 !== 0 ? 'bg-[var(--color-surface)]/40' : ''}`}
                   >
                     <td className="px-5 py-3.5 font-mono text-[10px] text-[var(--color-text-tertiary)]">
-                      <Link to={`/incidents/${inc.id}`} className="hover:text-[var(--color-orange-brand)] transition-colors">
+                      <Link to={`/incidents/${inc.id}`} className="hover:text-[var(--color-primary)] transition-colors">
                         {inc.id.slice(0, 12)}
                       </Link>
                     </td>
                     <td className="px-5 py-3.5 max-w-xs">
                       <div className="font-semibold text-[var(--color-text-primary)] line-clamp-1">
-                        <Link to={`/incidents/${inc.id}`} className="hover:text-[var(--color-orange-brand)] transition-colors">
+                        <Link to={`/incidents/${inc.id}`} className="hover:text-[var(--color-primary)] transition-colors">
                           {inc.title}
                         </Link>
                       </div>
@@ -319,7 +319,7 @@ export function SIFIntelligence() {
                     <td className="px-5 py-3.5">
                       <Link
                         to={`/incidents/${inc.id}`}
-                        className="inline-flex items-center gap-1 text-[11px] text-[var(--color-orange-brand)] font-semibold hover:underline"
+                        className="inline-flex items-center gap-1 text-[11px] text-[var(--color-primary)] font-semibold hover:underline"
                       >
                         View <ArrowRight className="w-3 h-3" />
                       </Link>

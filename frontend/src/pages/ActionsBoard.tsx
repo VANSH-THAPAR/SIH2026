@@ -98,7 +98,7 @@ function ActionCard({
       </div>
 
       <div
-        className="text-[12.5px] font-semibold text-[var(--color-text-primary)] mb-2.5 line-clamp-2 cursor-pointer group-hover:text-[var(--color-orange-brand)] transition-colors"
+        className="text-[12.5px] font-semibold text-[var(--color-text-primary)] mb-2.5 line-clamp-2 cursor-pointer group-hover:text-[var(--color-primary)] transition-colors"
         onClick={onClick}
       >
         {action.title}
@@ -109,7 +109,7 @@ function ActionCard({
           Incident:{' '}
           <Link
             to={`/incidents/${action.report_id}`}
-            className="hover:text-[var(--color-orange-brand)] hover:underline font-medium"
+            className="hover:text-[var(--color-primary)] hover:underline font-medium"
             onPointerDown={(e) => e.stopPropagation()}
           >
             {action.report_id.slice(0, 12)}
@@ -266,7 +266,7 @@ export function ActionsBoard() {
     <div className="flex flex-col h-full animate-skeleton" style={{ background: 'var(--color-surface)' }}>
       <div className="flex-shrink-0 border-b border-[var(--color-border)] bg-white px-7 py-5">
         <div className="h-6 w-40 bg-[var(--color-border)] rounded mb-1" />
-        <div className="h-3 w-64 bg-[var(--color-surface-subtle)] rounded" />
+        <div className="h-3 w-64 bg-[var(--color-surface-strong)] rounded" />
       </div>
       <div className="flex gap-4 p-7 h-full overflow-x-auto flex-1">
         {[1, 2, 3, 4].map((col) => (
@@ -400,7 +400,7 @@ export function ActionsBoard() {
                 </label>
                 <Link
                   to={`/incidents/${selectedAction.report_id}`}
-                  className="text-[12.5px] font-medium hover:text-[var(--color-orange-brand)] hover:underline font-mono text-[var(--color-text-primary)] transition-colors"
+                  className="text-[12.5px] font-medium hover:text-[var(--color-primary)] hover:underline font-mono text-[var(--color-text-primary)] transition-colors"
                 >
                   {selectedAction.report_id}
                 </Link>

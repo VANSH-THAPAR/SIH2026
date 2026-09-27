@@ -100,7 +100,7 @@ export function NewReportForm({ onClose, isModal = true }: NewReportFormProps) {
     mutation.mutate(payload);
   };
 
-  const inputCls = 'w-full px-3 py-2 text-[12.5px] border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[var(--color-orange-brand)] text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] transition-colors';
+  const inputCls = 'w-full px-3 py-2 text-[12.5px] border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)] text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] transition-colors';
   const labelCls = 'text-[11px] font-semibold text-[var(--color-text-secondary)] block mb-1.5';
   const sectionHeaderCls = 'flex items-center gap-2 text-[10.5px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-wider mt-6 mb-4 pb-2 border-b border-[var(--color-border)]';
 
@@ -109,7 +109,7 @@ export function NewReportForm({ onClose, isModal = true }: NewReportFormProps) {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-[var(--color-border)] bg-white">
           <div className="flex items-center gap-3">
-            <div className="w-2 h-2 rounded-full bg-[var(--color-orange-brand)] animate-pulse" />
+            <div className="w-2 h-2 rounded-full bg-[var(--color-primary)] animate-pulse" />
             <h2 className="text-[16px] font-bold text-[var(--color-text-primary)]">New Incident Report</h2>
           </div>
           {isModal && (
@@ -331,7 +331,7 @@ export function NewReportForm({ onClose, isModal = true }: NewReportFormProps) {
             form="new-report-form"
             disabled={mutation.isPending}
             className="flex items-center gap-2 px-6 py-2 text-[12px] font-semibold text-white rounded-lg shadow-sm transition-colors disabled:opacity-50 cursor-pointer"
-            style={{ background: 'var(--color-orange-brand)' }}
+            style={{ background: 'var(--color-primary)' }}
           >
             {mutation.isPending ? (
               <>

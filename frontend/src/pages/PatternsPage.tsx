@@ -125,7 +125,7 @@ export function PatternsPage() {
         {/* Panel header */}
         <div className="px-5 py-5 border-b border-[var(--color-border)]">
           <div className="flex items-center gap-2 mb-1">
-            <Network className="w-4 h-4 text-[var(--color-orange-brand)]" />
+            <Network className="w-4 h-4 text-[var(--color-primary)]" />
             <h2 className="font-bold text-[var(--color-text-primary)] text-[14px]">Pattern Intelligence</h2>
           </div>
           <p className="text-[11px] text-[var(--color-text-tertiary)]">
@@ -139,7 +139,7 @@ export function PatternsPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search patterns…"
-              className="pl-9 pr-4 py-2 text-[12px] border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[var(--color-orange-brand)] w-full text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] transition-colors"
+              className="pl-9 pr-4 py-2 text-[12px] border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)] w-full text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] transition-colors"
             />
           </div>
         </div>
@@ -156,7 +156,7 @@ export function PatternsPage() {
                 className={clsx(
                   'p-4 rounded-xl border cursor-pointer transition-all',
                   selectedPattern?.id === pattern.id
-                    ? 'border-[var(--color-orange-brand)]/40 bg-[var(--color-orange-light)]'
+                    ? 'border-[var(--color-primary)]/40 bg-[var(--color-surface-strong)]'
                     : 'border-[var(--color-border)] bg-white hover:border-[var(--color-border-strong)] hover:bg-[var(--color-surface)]'
                 )}
               >
@@ -165,7 +165,7 @@ export function PatternsPage() {
                     className={clsx(
                       'font-semibold text-[12.5px] line-clamp-2 pr-2 leading-snug',
                       selectedPattern?.id === pattern.id
-                        ? 'text-[var(--color-orange-brand)]'
+                        ? 'text-[var(--color-primary)]'
                         : 'text-[var(--color-text-primary)]'
                     )}
                   >
@@ -191,7 +191,7 @@ export function PatternsPage() {
                     className={clsx(
                       'w-3.5 h-3.5 flex-shrink-0 ml-2',
                       selectedPattern?.id === pattern.id
-                        ? 'text-[var(--color-orange-brand)]'
+                        ? 'text-[var(--color-primary)]'
                         : 'text-[var(--color-border-strong)]'
                     )}
                   />
@@ -285,15 +285,15 @@ export function PatternsPage() {
                     <Link
                       key={id}
                       to={`/incidents/${id}`}
-                      className="flex items-center justify-between p-3 bg-[var(--color-surface)] hover:bg-[var(--color-orange-light)] border border-[var(--color-border)] hover:border-[var(--color-orange-brand)]/30 rounded-xl text-[11.5px] transition-all group"
+                      className="flex items-center justify-between p-3 bg-[var(--color-surface)] hover:bg-[var(--color-surface-strong)] border border-[var(--color-border)] hover:border-[var(--color-primary)]/30 rounded-xl text-[11.5px] transition-all group"
                     >
                       <div>
-                        <div className="font-mono text-[var(--color-text-primary)] text-[10px] group-hover:text-[var(--color-orange-brand)]">
+                        <div className="font-mono text-[var(--color-text-primary)] text-[10px] group-hover:text-[var(--color-primary)]">
                           {id}
                         </div>
                         <div className="text-[var(--color-text-tertiary)] text-[10px] mt-0.5">View details →</div>
                       </div>
-                      <ChevronRight className="w-3.5 h-3.5 text-[var(--color-border-strong)] group-hover:text-[var(--color-orange-brand)] transition-colors" />
+                      <ChevronRight className="w-3.5 h-3.5 text-[var(--color-border-strong)] group-hover:text-[var(--color-primary)] transition-colors" />
                     </Link>
                   ))}
                   {selectedPattern.incident_ids.length === 0 && (
