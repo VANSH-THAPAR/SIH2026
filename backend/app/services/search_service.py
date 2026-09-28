@@ -77,8 +77,7 @@ def semantic_search(db: Session, query: str, limit: int = 10) -> SearchResponse:
     Falls back to keyword search if encoding fails.
     """
     try:
-        from sentence_transformers import SentenceTransformer
-        import numpy as np
+        from ai.embeddings import RemoteSentenceTransformer as SentenceTransformer
 
         model = SentenceTransformer("all-MiniLM-L6-v2")
         query_embedding = model.encode(query, normalize_embeddings=True)

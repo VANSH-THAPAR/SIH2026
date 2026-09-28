@@ -6,7 +6,7 @@ python-dotenv
 pydantic
 asyncpg
 pgvector
-sentence-transformers
+requests
 python-multipart
 pyjwt
 bcrypt
