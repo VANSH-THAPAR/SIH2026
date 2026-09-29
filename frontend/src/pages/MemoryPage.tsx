@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Search, Brain, ArrowRight } from 'lucide-react';
 import { semanticSearch, keywordSearch } from '../services/api';
@@ -9,13 +9,21 @@ import { ErrorState, EmptyState } from '../components/ui/Toast';
 export function MemoryPage() {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const [searchMode, setSearchMode] = useState<'semantic' | 'keyword'>('semantic');
   const [hasSearched, setHasSearched] = useState(false);
 
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedQuery(query);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [query]);
+
   const { data: results, isLoading, isError, refetch } = useQuery<any>({
-    queryKey: ['search', searchMode, query],
-    queryFn: () => searchMode === 'semantic' ? semanticSearch(query) : keywordSearch(query),
-    enabled: hasSearched && query.length > 2,
+    queryKey: ['search', searchMode, debouncedQuery],
+    queryFn: () => searchMode === 'semantic' ? semanticSearch(debouncedQuery) : keywordSearch(debouncedQuery),
+    enabled: hasSearched && debouncedQuery.length > 2,
     staleTime: 30000,
   });
 
@@ -28,6 +36,9 @@ export function MemoryPage() {
   };
 
   const resultsArray: any[] = (results as any)?.items || (results as any) || [];
+  const normalizedResults = searchMode === 'semantic'
+    ? resultsArray.map((res: any) => ({ ...res.incident, similarity_score: res.similarity_score }))
+    : resultsArray;
 
   const EXAMPLE_QUERIES = [
     'worker slipped near pump during maintenance',
@@ -129,24 +140,24 @@ export function MemoryPage() {
           </div>
         )}
         {hasSearched && isError && <ErrorState message="Search failed — please try again." />}
-        {hasSearched && !isLoading && !isError && resultsArray.length === 0 && (
+        {hasSearched && !isLoading && !isError && normalizedResults.length === 0 && (
           <EmptyState
             title="No similar incidents found"
             description="Try rephrasing your search or switch between semantic and keyword modes."
           />
         )}
 
-        {hasSearched && !isLoading && !isError && resultsArray.length > 0 && (
+        {hasSearched && !isLoading && !isError && normalizedResults.length > 0 && (
           <div>
             <div className="text-[12px] font-semibold text-[var(--color-text-secondary)] border-b border-[var(--color-border)] pb-3 mb-4 flex items-center justify-between">
               <span>
-                {resultsArray.length} result{resultsArray.length !== 1 ? 's' : ''}
+                {normalizedResults.length} result{normalizedResults.length !== 1 ? 's' : ''}
                 {searchMode === 'semantic' ? ' · AI semantic match' : ' · Keyword match'}
               </span>
             </div>
 
             <div className="space-y-3">
-              {resultsArray.map((incident: any) => (
+              {normalizedResults.map((incident: any) => (
                 <div
                   key={incident.id}
                   className="bg-white border border-[var(--color-border)] rounded-xl p-5 cursor-pointer hover:border-[var(--color-border-strong)] hover:shadow-sm transition-all group"

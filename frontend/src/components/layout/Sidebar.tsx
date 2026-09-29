@@ -21,7 +21,7 @@ const PRIMARY_NAV = [
   { path: '/controls', label: 'Safety Controls', icon: ShieldCheck },
   { path: '/patterns', label: 'Pattern Intel', icon: Network },
   { path: '/memory', label: 'Safety Memory', icon: Brain },
-  { path: '/actions', label: 'Action Management', icon: ClipboardCheck },
+
 ];
 
 const SECONDARY_NAV = [

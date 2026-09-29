@@ -8,7 +8,7 @@ import { SIFIntelligence } from '@/pages/SIFIntelligence';
 import { ControlsPage } from '@/pages/ControlsPage';
 import { PatternsPage } from '@/pages/PatternsPage';
 import { MemoryPage } from '@/pages/MemoryPage';
-import { ActionsBoard } from '@/pages/ActionsBoard';
+
 import { ReportsPage } from '@/pages/ReportsPage';
 import { AdminPage } from '@/pages/AdminPage';
 import { LoginPage } from '@/pages/LoginPage';
@@ -45,7 +45,7 @@ export default function App() {
             <Route path="controls" element={<ControlsPage />} />
             <Route path="patterns" element={<PatternsPage />} />
             <Route path="memory" element={<MemoryPage />} />
-            <Route path="actions" element={<ActionsBoard />} />
+
             <Route path="reports" element={<ReportsPage />} />
             <Route path="admin" element={<AdminPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />

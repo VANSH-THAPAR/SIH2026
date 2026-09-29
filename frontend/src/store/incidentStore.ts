@@ -21,18 +21,7 @@ interface IncidentUIState {
  resetFilters: () => void;
 }
 
-interface ActionUIState {
- actionViewMode: 'kanban' | 'list';
- selectedActionId: string | null;
- actionDrawerOpen: boolean;
- actionFilterStatus: ActionStatus | '';
- actionFilterPriority: Priority | '';
- setActionViewMode: (mode: 'kanban' | 'list') => void;
- setSelectedActionId: (id: string | null) => void;
- setActionDrawerOpen: (open: boolean) => void;
- setActionFilterStatus: (s: ActionStatus | '') => void;
- setActionFilterPriority: (p: Priority | '') => void;
-}
+
 
 interface GlobalUIState {
  sidebarCollapsed: boolean;
@@ -41,7 +30,7 @@ interface GlobalUIState {
  setGlobalSearchOpen: (v: boolean) => void;
 }
 
-type StoreState = IncidentUIState & ActionUIState & GlobalUIState;
+type StoreState = IncidentUIState & GlobalUIState;
 
 export const useStore = create<StoreState>((set) => ({
  // Incident UI
@@ -71,17 +60,7 @@ export const useStore = create<StoreState>((set) => ({
  filterSifOnly: false,
  }),
 
- // Action UI
- actionViewMode: 'kanban',
- selectedActionId: null,
- actionDrawerOpen: false,
- actionFilterStatus: '',
- actionFilterPriority: '',
- setActionViewMode: (mode) => set({ actionViewMode: mode }),
- setSelectedActionId: (id) => set({ selectedActionId: id }),
- setActionDrawerOpen: (open) => set({ actionDrawerOpen: open }),
- setActionFilterStatus: (s) => set({ actionFilterStatus: s }),
- setActionFilterPriority: (p) => set({ actionFilterPriority: p }),
+
 
  // Global UI
  sidebarCollapsed: false,

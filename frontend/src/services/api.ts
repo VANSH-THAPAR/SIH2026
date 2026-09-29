@@ -217,16 +217,16 @@ export const semanticSearch = async (
  query: string,
  limit = 10
 ): Promise<SemanticSearchResult[]> => {
- const res = await api.post<SemanticSearchResult[]>('/search/semantic', { query, limit });
- return res.data;
+ const res = await api.post<any>('/search/semantic', { query, limit });
+ return res.data.results || [];
 };
 
 export const keywordSearch = async (
  q: string,
  limit = 20
 ): Promise<IncidentSummary[]> => {
- const res = await api.get<IncidentSummary[]>(`/search/keyword?q=${encodeURIComponent(q)}&limit=${limit}`);
- return res.data;
+ const res = await api.get<any>(`/search/keyword?q=${encodeURIComponent(q)}&limit=${limit}`);
+ return res.data.results || [];
 };
 
 // ─── Barriers & LSR ───────────────────────────────────────────────────────────

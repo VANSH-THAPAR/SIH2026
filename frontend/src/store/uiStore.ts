@@ -7,9 +7,6 @@ interface UIState {
  incidentFilters: IncidentFilters;
  selectedIncidentId: string | null;
  
- // Actions board state
- actionDrawerOpen: boolean;
- selectedActionId: string | null;
 
  // Global search
  searchOpen: boolean;
@@ -33,8 +30,7 @@ interface UIActions {
  setIncidentFilters: (filters: Partial<IncidentFilters>) => void;
  clearFilters: () => void;
  setSelectedIncident: (id: string | null) => void;
- openActionDrawer: (actionId: string) => void;
- closeActionDrawer: () => void;
+
  setSearchOpen: (open: boolean) => void;
  setSearchQuery: (query: string) => void;
  toggleSidebar: () => void;
@@ -47,8 +43,7 @@ export const useUIStore = create<UIState & UIActions>((set, get) => ({
  boardView: 'board',
  incidentFilters: { page: 1, page_size: 50 },
  selectedIncidentId: null,
- actionDrawerOpen: false,
- selectedActionId: null,
+
  searchOpen: false,
  searchQuery: '',
  sidebarCollapsed: false,
@@ -65,9 +60,7 @@ export const useUIStore = create<UIState & UIActions>((set, get) => ({
  
  setSelectedIncident: (id) => set({ selectedIncidentId: id }),
  
- openActionDrawer: (actionId) => set({ actionDrawerOpen: true, selectedActionId: actionId }),
- 
- closeActionDrawer: () => set({ actionDrawerOpen: false, selectedActionId: null }),
+
  
  setSearchOpen: (open) => set({ searchOpen: open }),
  

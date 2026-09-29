@@ -2,22 +2,28 @@
 Search service: keyword and semantic similarity search.
 Uses existing pgvector embeddings in report_embeddings table.
 """
+import logging
 from typing import List, Optional
 from sqlalchemy.orm import Session
-from sqlalchemy import text, or_, func
+from sqlalchemy import text, or_, and_, func
 
 from app.models.models import ReportAnalysis, SifReport, IncidentMeta, ReportBarrier, ReportRule, LifeSavingRule
 from app.schemas.schemas import IncidentSummary, SemanticSearchResult, SearchResponse
 from app.services.safety_engine import calculate_priority, derive_incident_title
 
+logger = logging.getLogger(__name__)
+
 
 def keyword_search(db: Session, query: str, limit: int = 20) -> List[IncidentSummary]:
     """Full-text keyword search across incident data."""
-    search_term = f"%{query}%"
-    rows = (
-        db.query(SifReport, ReportAnalysis)
-        .outerjoin(ReportAnalysis, SifReport.report_id == ReportAnalysis.report_id)
-        .filter(
+    terms = [t.strip() for t in query.split() if len(t.strip()) > 1]
+    if not terms:
+        return []
+    
+    conditions = []
+    for term in terms:
+        search_term = f"%{term}%"
+        conditions.append(
             or_(
                 SifReport.report_id.ilike(search_term),
                 SifReport.description.ilike(search_term),
@@ -32,6 +38,11 @@ def keyword_search(db: Session, query: str, limit: int = 20) -> List[IncidentSum
                 ReportAnalysis.worker_exposure.ilike(search_term),
             )
         )
+
+    rows = (
+        db.query(SifReport, ReportAnalysis)
+        .outerjoin(ReportAnalysis, SifReport.report_id == ReportAnalysis.report_id)
+        .filter(and_(*conditions))
         .order_by(ReportAnalysis.sif_score.desc().nullslast())
         .limit(limit)
         .all()
@@ -84,15 +95,19 @@ def semantic_search(db: Session, query: str, limit: int = 10) -> SearchResponse:
         embedding_str = "[" + ",".join(str(x) for x in query_embedding.tolist()) + "]"
 
         # Use pgvector cosine distance operator <=>
-        sql = text("""
+        # NOTE: embedding_str is inlined directly (not as a bind param) because
+        # SQLAlchemy's text() parser confuses :embedding::vector  — it sees
+        # ':embedding:' as a malformed bind placeholder. The float array is safe
+        # to inline since it is generated internally, not from user input.
+        sql = text(f"""
             SELECT 
                 re.report_id,
-                1 - (re.embedding <=> :embedding::vector) as similarity
+                1 - (re.embedding <=> '{embedding_str}'::vector) as similarity
             FROM report_embeddings re
-            ORDER BY re.embedding <=> :embedding::vector
+            ORDER BY re.embedding <=> '{embedding_str}'::vector
             LIMIT :limit
         """)
-        rows = db.execute(sql, {"embedding": embedding_str, "limit": limit}).fetchall()
+        rows = db.execute(sql, {"limit": limit}).fetchall()
 
         report_ids = [r[0] for r in rows]
         similarity_map = {r[0]: float(r[1]) for r in rows}
@@ -145,6 +160,8 @@ def semantic_search(db: Session, query: str, limit: int = 10) -> SearchResponse:
         return SearchResponse(results=results, query=query, total=len(results))
 
     except Exception as e:
+        # Log the real error so it's visible in server logs
+        logger.error(f"[semantic_search] Embedding/pgvector failed, falling back to keyword search. Error: {e}", exc_info=True)
         # Fallback to keyword search
         keyword_results = keyword_search(db, query, limit)
         return SearchResponse(
