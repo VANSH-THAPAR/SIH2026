@@ -66,8 +66,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ isLoading: true, error: null });
     const creds =
       role === 'hse'
-        ? { email: 'hse@indianoil.in', password: 'Password@123', role: 'hse' as UserRole }
-        : { email: 'reporter@indianoil.in', password: 'Password@123', role: 'reporter' as UserRole };
+        ? { email: 'hse@test.com', password: 'password123', role: 'hse' as UserRole }
+        : { email: 'reporter@test.com', password: 'password123', role: 'reporter' as UserRole };
 
     try {
       // First attempt to log in

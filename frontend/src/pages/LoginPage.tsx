@@ -222,7 +222,7 @@ export function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@indianoil.in"
+                  placeholder="name@test.com"
                   className={inputCls}
                 />
               </div>
