@@ -1,5 +1,5 @@
 import os
-from sentence_transformers import SentenceTransformer
+from ai.embeddings import RemoteSentenceTransformer as SentenceTransformer
 from typing import List, Dict, Any
 from models import ReportPayload
 from dotenv import load_dotenv
