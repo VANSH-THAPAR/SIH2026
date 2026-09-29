@@ -95,7 +95,7 @@ export function Header() {
             <div className="absolute right-0 top-11 w-56 bg-white border border-[var(--color-border)] rounded-xl z-50 shadow-lg overflow-hidden animate-fade-in">
               <div className="p-3 border-b border-[var(--color-border)] bg-[var(--color-surface)]">
                 <div className="text-[12px] font-semibold text-[var(--color-text-primary)] truncate">
-                  {user?.email || 'user@indianoil.in'}
+                  {user?.email || 'user@test.com'}
                 </div>
                 <div className="flex items-center gap-1 mt-1">
                   {user?.role === 'hse' ? (
